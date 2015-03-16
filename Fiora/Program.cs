@@ -86,16 +86,19 @@ namespace Fiora
             //Game.PrintChat(spell.Name);
             if (spell.Name.Contains("ItemTiamatCleave"))
             {
+                k = 0;
                 if(Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
                 {
                     l = 0;
-                    k = 0;
                 }
                 Game.Say("/l");
             }
             if (spell.Name.Contains("FioraQ"))
             {
-                l = 1;
+                if(Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+                {
+                    l = 1;
+                }
             }
             if (spell.Name.Contains("FioraFlurry"))
             {
