@@ -83,7 +83,7 @@ namespace Fiora
             var spell = args.SData;
             if (!sender.IsMe)
                 return;
-            Game.PrintChat(spell.Name);
+            //Game.PrintChat(spell.Name);
             if (spell.Name.Contains("ItemTiamatCleave"))
             {
                 if(Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
