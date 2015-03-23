@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,7 +21,7 @@ namespace Fiora
 
         private static Menu Menu;
 
-        private static float l, k;
+        private static float l, k, lastAA , Qcount, Qstate;
 
         static void Main(string[] args)
         {
@@ -52,9 +52,13 @@ namespace Fiora
             //spellMenu.AddItem(new MenuItem("Use W Harass", "Use W Harass").SetValue(true));
             //spellMenu.AddItem(new MenuItem("Use E Harass", "Use E Harass").SetValue(true));
             spellMenu.AddItem(new MenuItem("Use Q Combo", "Use Q Combo").SetValue(true));
+            spellMenu.AddItem(new MenuItem("Q minium distance", "Q minium distance").SetValue(new Slider(0, 0, 300)));
             //spellMenu.AddItem(new MenuItem("Use W Combo", "Use W Combo").SetValue(true));
             //spellMenu.AddItem(new MenuItem("Use E Combo", "Use E Combo").SetValue(true));
-            spellMenu.AddItem(new MenuItem("Use R Combo", "Use R Combo").SetValue(true));
+            spellMenu.AddItem(new MenuItem("Use R Combo Burst", "Use R Combo Burst").SetValue(false));
+            spellMenu.AddItem(new MenuItem("Use R Combo Killable", "Use R Combo Killable").SetValue(true));
+            spellMenu.AddItem(new MenuItem("Use R Combo Save Life", "Use R Save Life").SetValue(true));
+            spellMenu.AddItem(new MenuItem("If HP <", "If HP <").SetValue(new Slider(20, 0, 100)));
             spellMenu.AddItem(new MenuItem("dont W if mana <", "dont W if mana <").SetValue(new Slider(40, 0, 100)));
             spellMenu.AddItem(new MenuItem("force focus selected", "force focus selected").SetValue(false));
             spellMenu.AddItem(new MenuItem("if selected in :", "if selected in :").SetValue(new Slider(1000, 1000, 1500)));
@@ -87,7 +91,7 @@ namespace Fiora
             if (spell.Name.Contains("ItemTiamatCleave"))
             {
                 k = 0;
-                if(Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
                 {
                     l = 0;
                 }
@@ -95,7 +99,8 @@ namespace Fiora
             }
             if (spell.Name.Contains("FioraQ"))
             {
-                if(Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+                Qcount = Environment.TickCount;
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
                 {
                     l = 1;
                 }
@@ -105,6 +110,10 @@ namespace Fiora
                 //Utility.DelayAction.Add(30, () => Orbwalking.ResetAutoAttackTimer());
                 Orbwalking.ResetAutoAttackTimer();
             }
+            if (spell.Name.ToLower().Contains("fiorabasicattack"))
+            {
+                lastAA = Environment.TickCount;
+            }
         }
         public static void OnAttack(AttackableUnit unit, AttackableUnit target)
         {
@@ -113,14 +122,17 @@ namespace Fiora
                 if (ItemData.Youmuus_Ghostblade.GetItem().IsReady())
                     ItemData.Youmuus_Ghostblade.GetItem().Cast();
             }
-            if (!target.IsMe)
-                return;
-            foreach (var hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy))
+            if (target.IsMe)
             {
-                if (hero.Name == unit.Name && Player.Mana / Player.MaxMana > Menu.Item("dont W if mana <").GetValue<Slider>().Value)
+                Game.PrintChat(unit.Name);
+                foreach (var hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy))
                 {
-                    var x = Player.Position;
-                    W.Cast(x);
+                    if (unit.Name.ToLower().Contains(hero.SkinName.ToLower()) && Player.Mana / Player.MaxMana > Menu.Item("dont W if mana <").GetValue<Slider>().Value)
+                    {
+                        var x = Player.Position;
+                        W.Cast(x);
+                    }
+
                 }
             }
         }
@@ -128,7 +140,7 @@ namespace Fiora
         {
             if (!unit.IsMe)
                 return;
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed )
             {
                 if (!E.IsReady() && HasItem())
                 {
@@ -180,6 +192,8 @@ namespace Fiora
             //Game.PrintChat(Q.Instance.Name);
             getQ();
             getItem();
+            GetQstate();
+            //WanhDc();
             if (Selected() == true && !Orbwalker.InAutoAttackRange(TargetSelector.GetSelectedTarget()) && !Player.IsWindingUp)
             {
                 Orbwalker.SetAttack(false);
@@ -202,10 +216,19 @@ namespace Fiora
                 //{
                 //    useE();
                 //}
-                if (Menu.Item("Use R Combo").GetValue<bool>())
+                if (Menu.Item("Use R Combo Burst").GetValue<bool>())
                 {
                     useR();
                 }
+                if (Menu.Item("Use R Combo Killable").GetValue<bool>())
+                {
+                    useRKS();
+                }
+                if (Menu.Item("Use R Combo Save Life").GetValue<bool>())
+                {
+                    useRSL();
+                }
+
 
             }
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
@@ -265,25 +288,38 @@ namespace Fiora
         public static void useQ()
         {
             var target = gettarget(600);
-            if (Player.Distance(target.Position) <=600)
+            if (Player.Distance(target.Position) <= 600)
             {
-                if (target != null && target.IsValidTarget() && !target.IsZombie && Orbwalking.CanAttack() && Q.IsReady() && l == 0 && !Orbwalker.InAutoAttackRange(target))
+                //if (target != null && target.IsValidTarget() && !target.IsZombie && Orbwalking.CanAttack() && Q.IsReady() && l == 0 && !Orbwalker.InAutoAttackRange(target))
+                //{
+                //    Q.Cast(target);
+                //}
+                //if (target != null && target.IsValidTarget() && !target.IsZombie && Q.IsReady() && l == 0 && Orbwalker.InAutoAttackRange(target))
+                //{
+                //    Q.Cast(target);
+                //}
+                //if (Selected() && !Orbwalker.InAutoAttackRange(target))
+                //{
+                //    Q.Cast(target);
+                //}
+                var x = Menu.Item("Q minium distance").GetValue<Slider>().Value;
+                if (target != null && target.IsValidTarget() && !target.IsZombie && WanhDc() && Q.IsReady() && l == 0 && Player.Distance(target.Position) >= x)
                 {
                     Q.Cast(target);
                 }
-                if (target != null && target.IsValidTarget() && !target.IsZombie && Q.IsReady() && l == 0 && Orbwalker.InAutoAttackRange(target))
+                if (target != null && target.IsValidTarget() && !target.IsZombie && WanhDc() && Q.IsReady() && l == 0 && Qstate == 2)
                 {
                     Q.Cast(target);
                 }
-                if (Selected() && !Orbwalker.InAutoAttackRange(target))
+                var Qdmg = Damage.GetSpellDamage(Player,target, SpellSlot.Q);
+                var dmg = Damage.CalcDamage(Player, target, Damage.DamageType.Physical, Player.BaseAttackDamage + Player.FlatPhysicalDamageMod);
+                bool kill = Qdmg + dmg >= target.Health;
+                if (target != null && target.IsValidTarget() && !target.IsZombie && WanhDc() && Q.IsReady() && l == 0 && kill)
                 {
                     Q.Cast(target);
                 }
             }
-            //if (target != null && target.IsValidTarget() && !target.IsZombie &&)
-            //{
-            //    Q.Cast(target);
-            //}
+
         }
         public static void getQ()
         {
@@ -294,16 +330,62 @@ namespace Fiora
                 l = 0;
 
         }
-        public static void useR ()
+        public static void useR()
         {
             var target = gettarget(400);
-            if (target != null && target.IsValidTarget() && !target.IsZombie && !Q.IsReady() && !E.IsReady()  && l == 0 && Player.Distance(target.Position) <= 400)
+            if (R.IsReady() && target != null && target.IsValidTarget() && !target.IsZombie && !Q.IsReady() && !E.IsReady() && l == 0 && Player.Distance(target.Position) <= 400)
             {
-                if (Orbwalker.InAutoAttackRange(target) && !Orbwalking.CanAttack() && !Player.IsWindingUp)
+                if (Orbwalker.InAutoAttackRange(target) && !WanhDc() && !Player.IsWindingUp)
                 {
                     R.Cast(target);
                 }
                 if (!Orbwalker.InAutoAttackRange(target) && !Player.IsWindingUp)
+                {
+                    R.Cast(target);
+                }
+            }
+        }
+        public static void useRKS()
+        {
+            var target = gettarget(400);
+            var damage = new double[] { 300, 475, 650 }[R.Level - 1] + 0.9 * Player.FlatPhysicalDamageMod;
+            double truedmg;
+            if (target.CountEnemiesInRange(700) == 1)
+            {
+                truedmg = damage * 2.6;
+            }
+            else if ( target.CountEnemiesInRange(700) == 2)
+            {
+                truedmg = damage * 1.8;
+            }
+            else
+            {
+                truedmg = damage * 1.4;
+            }
+            if (R.IsReady() && target != null && target.IsValidTarget() && !target.IsZombie && !Q.IsReady() && !E.IsReady() && l == 0 && Player.Distance(target.Position) <= 400)
+            {
+                if (Damage.CalcDamage(Player,target,Damage.DamageType.Physical,truedmg) > target.Health)
+                {
+                    if (Orbwalker.InAutoAttackRange(target) && !WanhDc() && !Player.IsWindingUp)
+                    {
+                        R.Cast(target);
+                    }
+                    if (!Orbwalker.InAutoAttackRange(target) && !Player.IsWindingUp)
+                    {
+                        R.Cast(target);
+                    }
+                }
+            }
+
+
+
+        }
+        public static void useRSL()
+        {
+            var target = gettarget(400);
+            if ( Player.Health/Player.MaxHealth*100 <= Menu.Item("If HP <").GetValue<Slider>().Value)
+            {
+                if( target != null && target.IsValidTarget() && !target.IsZombie && Player.Distance(target.Position) <= 400 )
                 {
                     R.Cast(target);
                 }
@@ -327,6 +409,26 @@ namespace Fiora
                 ItemData.Tiamat_Melee_Only.GetItem().Cast();
             if (ItemData.Ravenous_Hydra_Melee_Only.GetItem().IsReady())
                 ItemData.Ravenous_Hydra_Melee_Only.GetItem().Cast();
+        }
+        public static bool WanhDc()
+        {
+            return Environment.TickCount + Game.Ping / 2 + 25 >= lastAA + Player.AttackDelay * 1000;
+        }
+        public static void GetQstate()
+        {
+            if (Environment.TickCount - Qcount >= 4000)
+            {
+                Qstate = 0;
+            }
+            if (Environment.TickCount - Qcount >=3500 && Environment.TickCount - Qcount < 4000 && Qstate == 1)
+            {
+                Qstate = 2;
+            }
+            if (Environment.TickCount - Qcount <= 4000 && Qstate ==0 )
+            {
+                Qstate = 1;
+            }
+
         }
 
     }
