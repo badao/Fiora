@@ -55,18 +55,18 @@ namespace Fiora
             spellMenu.AddItem(new MenuItem("Q minium distance", "Q minium distance").SetValue(new Slider(0, 0, 300)));
             //spellMenu.AddItem(new MenuItem("Use W Combo", "Use W Combo").SetValue(true));
             //spellMenu.AddItem(new MenuItem("Use E Combo", "Use E Combo").SetValue(true));
-            spellMenu.AddItem(new MenuItem("Use R Combo Burst", "Use R Combo Burst").SetValue(false));
+            spellMenu.AddItem(new MenuItem("Use R Combo Burst", "Use R Combo Burst").SetValue(true));
             spellMenu.AddItem(new MenuItem("Use R Combo Killable", "Use R Combo Killable").SetValue(true));
             spellMenu.AddItem(new MenuItem("Use R Combo Save Life", "Use R Save Life").SetValue(true));
             spellMenu.AddItem(new MenuItem("If HP <", "If HP <").SetValue(new Slider(20, 0, 100)));
-            spellMenu.AddItem(new MenuItem("dont W if mana <", "dont W if mana <").SetValue(new Slider(40, 0, 100)));
             spellMenu.AddItem(new MenuItem("force focus selected", "force focus selected").SetValue(false));
             spellMenu.AddItem(new MenuItem("if selected in :", "if selected in :").SetValue(new Slider(1000, 1000, 1500)));
             //spellMenu.AddItem(new MenuItem("Use E", "Use E")).SetValue(false);
-            //foreach (var hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy))
-            //{
-            //    spellMenu.AddItem(new MenuItem("use R" + hero.SkinName, "use R" + hero.SkinName)).SetValue(true);
-            //}
+            foreach (var hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy))
+            {
+                spellMenu.AddItem(new MenuItem("use W " + hero.SkinName, "use W " + hero.SkinName)).SetValue(true);
+            }
+            spellMenu.AddItem(new MenuItem("dont W if mana <", "dont W if mana <").SetValue(new Slider(40, 0, 100)));
 
             //spellMenu.AddItem(new MenuItem("useR", "Use R to Farm").SetValue(true));
             //spellMenu.AddItem(new MenuItem("LaughButton", "Combo").SetValue(new KeyBind(32, KeyBindType.Press)));
@@ -85,6 +85,27 @@ namespace Fiora
         public static void oncast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
         {
             var spell = args.SData;
+            if (spell.Name.ToLower().Contains("basicattack") && args.Target.Name == Player.Name )
+            {
+                foreach (var hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy))
+                {
+                    //if (hero.SkinName == sender.SkinName)
+                    //{
+                    //    if (Menu.Item("use W " + hero.SkinName).GetValue<bool>())
+                    //    {
+                    //        if ((Player.Mana / Player.MaxMana) * 100 > Menu.Item("dont W if mana <").GetValue<Slider>().Value)
+                    //        {
+                    //        }
+                    //    }
+                    //}
+
+                    if (hero.SkinName == sender.SkinName && Menu.Item("use W " + hero.SkinName).GetValue<bool>() && (Player.Mana / Player.MaxMana)*100 > Menu.Item("dont W if mana <").GetValue<Slider>().Value)
+                    {
+                        var x = Player.Position;
+                        W.Cast(x);
+                    }
+                }
+            }
             if (!sender.IsMe)
                 return;
             //Game.PrintChat(spell.Name);
@@ -117,17 +138,18 @@ namespace Fiora
         }
         public static void OnAttack(AttackableUnit unit, AttackableUnit target)
         {
+
             if (unit.IsMe && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
                 if (ItemData.Youmuus_Ghostblade.GetItem().IsReady())
                     ItemData.Youmuus_Ghostblade.GetItem().Cast();
             }
-            if (target.IsMe)
+            if (target.Name == Player.Name)
             {
-                Game.PrintChat(unit.Name);
+                Game.PrintChat("yes");
                 foreach (var hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy))
                 {
-                    if (unit.Name.ToLower().Contains(hero.SkinName.ToLower()) && Player.Mana / Player.MaxMana > Menu.Item("dont W if mana <").GetValue<Slider>().Value)
+                    if (unit.Name.ToLower().Contains(hero.Name.ToLower()) && Player.Mana / Player.MaxMana > Menu.Item("dont W if mana <").GetValue<Slider>().Value)
                     {
                         var x = Player.Position;
                         W.Cast(x);
@@ -177,7 +199,7 @@ namespace Fiora
                 return;
             //if (Player.IsWindingUp)
             //{
-            //    Game.PrintChat("heis");
+            //Game.PrintChat(Player.Name);
             //}
             //foreach (var buff in Player.Buffs)
             //{
