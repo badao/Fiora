@@ -21,7 +21,7 @@ namespace Fiora
 
         private static Menu Menu;
 
-        private static float l, k, lastAA , Qcount, Qstate, Itemcount;
+        private static float l, k, lastAA , Qcount, Qstate, Itemcount ,Qgap;
 
         static void Main(string[] args)
         {
@@ -64,6 +64,7 @@ namespace Fiora
             //spellMenu.AddItem(new MenuItem("Use W Harass", "Use W Harass").SetValue(true));
             //spellMenu.AddItem(new MenuItem("Use E Harass", "Use E Harass").SetValue(true));
             Combo.AddItem(new MenuItem("Use Q Combo", "Use Q Combo").SetValue(true));
+            Combo.AddItem(new MenuItem("Use Q Gap", "Use Q Gap").SetValue(true));
             Combo.AddItem(new MenuItem("Q minimum distance", "Q minimum distance").SetValue(new Slider(0, 0, 300)));
             //spellMenu.AddItem(new MenuItem("Use W Combo", "Use W Combo").SetValue(true));
             //spellMenu.AddItem(new MenuItem("Use E Combo", "Use E Combo").SetValue(true));
@@ -142,7 +143,16 @@ namespace Fiora
                 Qcount = Environment.TickCount;
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
                 {
-                    l = 1;
+                    if (Qgap == 0)
+                    {
+                        l = 1;
+                    }
+                    else
+                    {
+                        l = 0;
+
+                        Qgap = 0;
+                    }
                 }
             }
             if (spell.Name.Contains("FioraFlurry"))
@@ -285,8 +295,14 @@ namespace Fiora
             {
                 if (Menu.Item("Use Q Combo").GetValue<bool>())
                 {
+                    if (Menu.Item("Use Q Gap").GetValue<bool>()) 
+                    {
+                        useQGap();
+                    }
                     useQ();
                 }
+
+                
                 //if (Menu.Item("Use W Combo").GetValue<bool>())
                 //{
                 //    useW();
@@ -517,6 +533,37 @@ namespace Fiora
                 if (Qstate == 1 || Qstate == 2)
                 {
                     Q.Cast(target);
+                }
+            }
+        }
+        public static void useQGap()
+        {
+            var target = gettarget(1100);
+            if (target != null && target.IsValidTarget() && !target.IsZombie && Player.Distance(target.Position) <= 1100 && Player.Distance(target.Position)>600)
+            {
+                if (Qstate == 0 && !Player.IsWindingUp && !Player.IsDashing() && Q.IsReady())
+                {
+                    Obj_AI_Base x = null;
+                    float y = 600;
+                    foreach (var one in ObjectManager.Get<Obj_AI_Base>().Where(one => one.IsEnemy && Player.Distance(one.Position) <= 600))
+                    {
+                        if (one.Type == GameObjectType.obj_AI_Hero || one.IsMinion)
+                        {
+                            if (one.IsValidTarget() && !one.IsZombie && one.Distance(target.Position) <= 550 && Player.Distance(one.Position) <= 600)
+                            {
+                                if (one.Distance(target.Position) < y)
+                                {
+                                    y = one.Distance(target.Position);
+                                    x = one;
+                                }
+                            }
+                        }
+                    }
+                    if (x != null && WanhDc())
+                    {
+                        Qgap = 1;
+                        Q.Cast(x);
+                    }
                 }
             }
         }
