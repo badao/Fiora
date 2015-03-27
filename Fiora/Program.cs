@@ -64,7 +64,7 @@ namespace Fiora
             //spellMenu.AddItem(new MenuItem("Use W Harass", "Use W Harass").SetValue(true));
             //spellMenu.AddItem(new MenuItem("Use E Harass", "Use E Harass").SetValue(true));
             Combo.AddItem(new MenuItem("Use Q Combo", "Use Q Combo").SetValue(true));
-            Combo.AddItem(new MenuItem("Q minium distance", "Q minium distance").SetValue(new Slider(0, 0, 300)));
+            Combo.AddItem(new MenuItem("Q minimum distance", "Q minimum distance").SetValue(new Slider(0, 0, 300)));
             //spellMenu.AddItem(new MenuItem("Use W Combo", "Use W Combo").SetValue(true));
             //spellMenu.AddItem(new MenuItem("Use E Combo", "Use E Combo").SetValue(true));
             Combo.AddItem(new MenuItem("Use R Combo Burst", "Use R Combo Burst").SetValue(true));
@@ -82,11 +82,11 @@ namespace Fiora
 
             LaneClear.AddItem(new MenuItem("Use Q LaneClear", "Use Q LaneClear").SetValue(true));
             LaneClear.AddItem(new MenuItem("Use E LaneClear", "Use E LaneClear").SetValue(true));
-            LaneClear.AddItem(new MenuItem("Minium Mana LC", "Minium Mana LC").SetValue(new Slider(40, 0, 100)));
+            LaneClear.AddItem(new MenuItem("minimum Mana LC", "minimum Mana LC").SetValue(new Slider(40, 0, 100)));
 
             JungClear.AddItem(new MenuItem("Use Q JungClear", "Use Q LaneClear").SetValue(true));
             JungClear.AddItem(new MenuItem("Use E JungClear", "Use E LaneClear").SetValue(true));
-            JungClear.AddItem(new MenuItem("Minium Mana JC", "Minium Mana JC").SetValue(new Slider(40, 0, 100)));
+            JungClear.AddItem(new MenuItem("minimum Mana JC", "minimum Mana JC").SetValue(new Slider(40, 0, 100)));
             //spellMenu.AddItem(new MenuItem("useR", "Use R to Farm").SetValue(true));
             //spellMenu.AddItem(new MenuItem("LaughButton", "Combo").SetValue(new KeyBind(32, KeyBindType.Press)));
             //spellMenu.AddItem(new MenuItem("ConsumeHealth", "Consume below HP").SetValue(new Slider(40, 1, 100)));
@@ -208,26 +208,22 @@ namespace Fiora
             }
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
             {
-                if (target.Name.ToLower().Contains("minion") && Menu.Item("Use E LaneClear").GetValue<bool>() && Player.Mana / Player.MaxMana * 100 > Menu.Item("Minium Mana LC").GetValue<Slider>().Value)
+                if (HasItem())
                 {
-                    if (E.IsReady())
+                    CastItem();
+                }
+                if (target.Name.ToLower().Contains("minion") && Menu.Item("Use E LaneClear").GetValue<bool>())
+                {
+                    if (E.IsReady() && Player.Mana / Player.MaxMana * 100 > Menu.Item("minimum Mana LC").GetValue<Slider>().Value)
                     {
                         E.Cast();
-                    }
-                    if (HasItem())
-                    {
-                        CastItem();
                     }
                 }
-                if (target.Name.ToLower().Contains("sru") && Menu.Item("Use E JungClear").GetValue<bool>() && Player.Mana / Player.MaxMana *100 > Menu.Item("Minium Mana JC").GetValue<Slider>().Value)
+                if (target.Name.ToLower().Contains("sru") && Menu.Item("Use E JungClear").GetValue<bool>())
                 {
-                    if (E.IsReady())
+                    if (E.IsReady() && Player.Mana / Player.MaxMana * 100 > Menu.Item("minimum Mana JC").GetValue<Slider>().Value)
                     {
                         E.Cast();
-                    }
-                    if (HasItem())
-                    {
-                        CastItem();
                     }
                 }
             }
@@ -247,7 +243,7 @@ namespace Fiora
         {
             if (Player.IsDead)
                 return;
-            //if (Player.Mana / Player.MaxMana > Menu.Item("Minium Mana LC").GetValue<Slider>().Value)
+            //if (Player.Mana / Player.MaxMana > Menu.Item("minimum Mana LC").GetValue<Slider>().Value)
             //{
             //    Game.PrintChat("oh oh");
             //}
@@ -404,7 +400,7 @@ namespace Fiora
                 //{
                 //    Q.Cast(target);
                 //}
-                var x = Menu.Item("Q minium distance").GetValue<Slider>().Value;
+                var x = Menu.Item("Q minimum distance").GetValue<Slider>().Value;
                 if (target != null && target.IsValidTarget() && !target.IsZombie && WanhDc() && Q.IsReady() && l == 0 && Player.Distance(target.Position) >= x)
                 {
                     Q.Cast(target);
@@ -499,7 +495,7 @@ namespace Fiora
             var target = MinionManager.GetMinions(Player.Position, 600, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth).FirstOrDefault();
             if (target.IsValidTarget() && !target.IsZombie && Q.IsReady() && !Player.IsWindingUp && !Player.IsDashing())
             {
-                if (Qstate == 0 && Player.Mana / Player.MaxMana * 100 > Menu.Item("Minium Mana LC").GetValue<Slider>().Value)
+                if (Qstate == 0 && Player.Mana / Player.MaxMana * 100 > Menu.Item("minimum Mana LC").GetValue<Slider>().Value)
                 {
                     Q.Cast(target);
                 }
@@ -514,7 +510,7 @@ namespace Fiora
             var target = MinionManager.GetMinions(Player.Position, 600, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health).FirstOrDefault();
             if (target.IsValidTarget() && !target.IsZombie && Q.IsReady() && !Player.IsWindingUp && !Player.IsDashing())
             {
-                if (Qstate == 0 && Player.Mana / Player.MaxMana * 100 > Menu.Item("Minium Mana JC").GetValue<Slider>().Value)
+                if (Qstate == 0 && Player.Mana / Player.MaxMana * 100 > Menu.Item("minimum Mana JC").GetValue<Slider>().Value)
                 {
                     Q.Cast(target);
                 }
