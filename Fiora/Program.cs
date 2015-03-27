@@ -21,7 +21,7 @@ namespace Fiora
 
         private static Menu Menu;
 
-        private static float l, k, lastAA , Qcount, Qstate;
+        private static float l, k, lastAA , Qcount, Qstate, Itemcount;
 
         static void Main(string[] args)
         {
@@ -48,26 +48,45 @@ namespace Fiora
             TargetSelector.AddToMenu(ts);
 
             Menu spellMenu = Menu.AddSubMenu(new Menu("Spells", "Spells"));
-            spellMenu.AddItem(new MenuItem("Use Q Harass", "Use Q Harass").SetValue(true));
+
+            Menu Harass = spellMenu.AddSubMenu(new Menu("Harass", "Harass"));
+
+            Menu Combo = spellMenu.AddSubMenu(new Menu("Combo", "Combo"));
+
+            Menu Focus = spellMenu.AddSubMenu(new Menu("Focus Selected", "Focus Selected"));
+
+            Menu LaneClear = spellMenu.AddSubMenu(new Menu("LaneClear", "LaneClear"));
+
+            Menu JungClear = spellMenu.AddSubMenu(new Menu("JungClear", "JungClear"));
+
+            Menu AutoW = spellMenu.AddSubMenu(new Menu("Auto W", "Auto W"));
+            Harass.AddItem(new MenuItem("Use Q Harass", "Use Q Harass").SetValue(true));
             //spellMenu.AddItem(new MenuItem("Use W Harass", "Use W Harass").SetValue(true));
             //spellMenu.AddItem(new MenuItem("Use E Harass", "Use E Harass").SetValue(true));
-            spellMenu.AddItem(new MenuItem("Use Q Combo", "Use Q Combo").SetValue(true));
-            spellMenu.AddItem(new MenuItem("Q minium distance", "Q minium distance").SetValue(new Slider(0, 0, 300)));
+            Combo.AddItem(new MenuItem("Use Q Combo", "Use Q Combo").SetValue(true));
+            Combo.AddItem(new MenuItem("Q minium distance", "Q minium distance").SetValue(new Slider(0, 0, 300)));
             //spellMenu.AddItem(new MenuItem("Use W Combo", "Use W Combo").SetValue(true));
             //spellMenu.AddItem(new MenuItem("Use E Combo", "Use E Combo").SetValue(true));
-            spellMenu.AddItem(new MenuItem("Use R Combo Burst", "Use R Combo Burst").SetValue(true));
-            spellMenu.AddItem(new MenuItem("Use R Combo Killable", "Use R Combo Killable").SetValue(true));
-            spellMenu.AddItem(new MenuItem("Use R Combo Save Life", "Use R Save Life").SetValue(true));
-            spellMenu.AddItem(new MenuItem("If HP <", "If HP <").SetValue(new Slider(20, 0, 100)));
-            spellMenu.AddItem(new MenuItem("force focus selected", "force focus selected").SetValue(false));
-            spellMenu.AddItem(new MenuItem("if selected in :", "if selected in :").SetValue(new Slider(1000, 1000, 1500)));
+            Combo.AddItem(new MenuItem("Use R Combo Burst", "Use R Combo Burst").SetValue(true));
+            Combo.AddItem(new MenuItem("Use R Combo Killable", "Use R Combo Killable").SetValue(true));
+            Combo.AddItem(new MenuItem("Use R Combo Save Life", "Use R Save Life").SetValue(true));
+            Combo.AddItem(new MenuItem("If HP <", "If HP <").SetValue(new Slider(20, 0, 100)));
+            Focus.AddItem(new MenuItem("force focus selected", "force focus selected").SetValue(false));
+            Focus.AddItem(new MenuItem("if selected in :", "if selected in :").SetValue(new Slider(1000, 1000, 1500)));
             //spellMenu.AddItem(new MenuItem("Use E", "Use E")).SetValue(false);
             foreach (var hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy))
             {
-                spellMenu.AddItem(new MenuItem("use W " + hero.SkinName, "use W " + hero.SkinName)).SetValue(true);
+                AutoW.AddItem(new MenuItem("use W " + hero.SkinName, "use W " + hero.SkinName)).SetValue(true);
             }
-            spellMenu.AddItem(new MenuItem("dont W if mana <", "dont W if mana <").SetValue(new Slider(40, 0, 100)));
+            AutoW.AddItem(new MenuItem("dont W if mana <", "dont W if mana <").SetValue(new Slider(40, 0, 100)));
 
+            LaneClear.AddItem(new MenuItem("Use Q LaneClear", "Use Q LaneClear").SetValue(true));
+            LaneClear.AddItem(new MenuItem("Use E LaneClear", "Use E LaneClear").SetValue(true));
+            LaneClear.AddItem(new MenuItem("Minium Mana LC", "Minium Mana LC").SetValue(new Slider(40, 0, 100)));
+
+            JungClear.AddItem(new MenuItem("Use Q JungClear", "Use Q LaneClear").SetValue(true));
+            JungClear.AddItem(new MenuItem("Use E JungClear", "Use E LaneClear").SetValue(true));
+            JungClear.AddItem(new MenuItem("Minium Mana JC", "Minium Mana JC").SetValue(new Slider(40, 0, 100)));
             //spellMenu.AddItem(new MenuItem("useR", "Use R to Farm").SetValue(true));
             //spellMenu.AddItem(new MenuItem("LaughButton", "Combo").SetValue(new KeyBind(32, KeyBindType.Press)));
             //spellMenu.AddItem(new MenuItem("ConsumeHealth", "Consume below HP").SetValue(new Slider(40, 1, 100)));
@@ -116,7 +135,7 @@ namespace Fiora
                 {
                     l = 0;
                 }
-                Game.Say("/l");
+                Game.Say("/d");
             }
             if (spell.Name.Contains("FioraQ"))
             {
@@ -162,11 +181,13 @@ namespace Fiora
         {
             if (!unit.IsMe)
                 return;
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed )
+            //Game.PrintChat(target.Name);
+            if (!target.Name.ToLower().Contains("minion") && !target.Name.ToLower().Contains("sru") && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed )
             {
                 if (!E.IsReady() && HasItem())
                 {
                     k = 1;
+                    Itemcount = Environment.TickCount;
                 }
                 if (!E.IsReady() && !HasItem())
                 {
@@ -185,6 +206,31 @@ namespace Fiora
                     }
                 }
             }
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+            {
+                if (target.Name.ToLower().Contains("minion") && Menu.Item("Use E LaneClear").GetValue<bool>() && Player.Mana / Player.MaxMana * 100 > Menu.Item("Minium Mana LC").GetValue<Slider>().Value)
+                {
+                    if (E.IsReady())
+                    {
+                        E.Cast();
+                    }
+                    if (HasItem())
+                    {
+                        CastItem();
+                    }
+                }
+                if (target.Name.ToLower().Contains("sru") && Menu.Item("Use E JungClear").GetValue<bool>() && Player.Mana / Player.MaxMana *100 > Menu.Item("Minium Mana JC").GetValue<Slider>().Value)
+                {
+                    if (E.IsReady())
+                    {
+                        E.Cast();
+                    }
+                    if (HasItem())
+                    {
+                        CastItem();
+                    }
+                }
+            }
         }
         public static void getItem()
         {
@@ -192,11 +238,19 @@ namespace Fiora
             {
                 CastItem();
             }
+            if (Environment.TickCount - Itemcount >= 700)
+            {
+                k = 0;
+            }
         }
         public static void Game_OnGameUpdate(EventArgs args)
         {
             if (Player.IsDead)
                 return;
+            //if (Player.Mana / Player.MaxMana > Menu.Item("Minium Mana LC").GetValue<Slider>().Value)
+            //{
+            //    Game.PrintChat("oh oh");
+            //}
             //if (Player.IsWindingUp)
             //{
             //Game.PrintChat(Player.Name);
@@ -218,7 +272,14 @@ namespace Fiora
             //WanhDc();
             if (Selected() == true && !Orbwalker.InAutoAttackRange(TargetSelector.GetSelectedTarget()) && !Player.IsWindingUp)
             {
-                Orbwalker.SetAttack(false);
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+                {
+                    Orbwalker.SetAttack(false);
+                }
+                else
+                {
+                    Orbwalker.SetAttack(true);
+                }
             }
             else
             {
@@ -268,6 +329,25 @@ namespace Fiora
                 //    useE();
                 //}
 
+            }
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+            {
+                if (Menu.Item("Use Q LaneClear").GetValue<bool>())
+                {
+                    useQLC();
+                }
+                //if (Menu.Item("Use E LaneClear").GetValue<bool>())
+                //{
+                //    useELC();
+                //}
+                if (Menu.Item("Use Q JungClear").GetValue<bool>())
+                {
+                    useQJC();
+                }
+                //if (Menu.Item("Use E JungClear").GetValue<bool>())
+                //{
+                //    useEJC();
+                //}
             }
         }
         public static bool Selected()
@@ -410,6 +490,37 @@ namespace Fiora
                 if( target != null && target.IsValidTarget() && !target.IsZombie && Player.Distance(target.Position) <= 400 )
                 {
                     R.Cast(target);
+                }
+            }
+        }
+
+        public static void useQJC()
+        {
+            var target = MinionManager.GetMinions(Player.Position, 600, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth).FirstOrDefault();
+            if (target.IsValidTarget() && !target.IsZombie && Q.IsReady() && !Player.IsWindingUp && !Player.IsDashing())
+            {
+                if (Qstate == 0 && Player.Mana / Player.MaxMana * 100 > Menu.Item("Minium Mana LC").GetValue<Slider>().Value)
+                {
+                    Q.Cast(target);
+                }
+                if (Qstate == 1 || Qstate == 2)
+                {
+                    Q.Cast(target);
+                }
+            }
+        }
+        public static void useQLC()
+        {
+            var target = MinionManager.GetMinions(Player.Position, 600, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health).FirstOrDefault();
+            if (target.IsValidTarget() && !target.IsZombie && Q.IsReady() && !Player.IsWindingUp && !Player.IsDashing())
+            {
+                if (Qstate == 0 && Player.Mana / Player.MaxMana * 100 > Menu.Item("Minium Mana JC").GetValue<Slider>().Value)
+                {
+                    Q.Cast(target);
+                }
+                if (Qstate == 1 || Qstate == 2)
+                {
+                    Q.Cast(target);
                 }
             }
         }
