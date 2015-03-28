@@ -96,7 +96,7 @@ namespace Fiora
 
             //Drawing.OnDraw += Drawing_OnDraw;
 
-            Game.OnGameUpdate += Game_OnGameUpdate;
+            Game.OnUpdate += Game_OnGameUpdate;
             Orbwalking.AfterAttack += AfterAttack;
             Orbwalking.OnAttack += OnAttack;
             Obj_AI_Base.OnProcessSpellCast += oncast;
