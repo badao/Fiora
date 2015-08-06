@@ -22,7 +22,6 @@ namespace Fiora
 
         private static Menu Menu;
 
-        private static float l, k, lastAA , Qcount, Qstate, Itemcount ,Qgap;
 
         static void Main(string[] args)
         {
@@ -35,10 +34,11 @@ namespace Fiora
                 return;
 
             Q = new Spell(SpellSlot.Q);
-            W = new Spell(SpellSlot.W);
+            W = new Spell(SpellSlot.W,750);
             E = new Spell(SpellSlot.E);
             R = new Spell(SpellSlot.R);
-            //Q.SetSkillshot(300, 50, 2000, false, SkillshotType.SkillshotLine);
+            W.SetSkillshot(0.75f,80, 2000, false, SkillshotType.SkillshotLine);
+            W.MinHitChance = HitChance.High;
 
 
             Menu = new Menu(Player.ChampionName, Player.ChampionName, true);
@@ -56,46 +56,34 @@ namespace Fiora
 
             Menu Focus = spellMenu.AddSubMenu(new Menu("Focus Selected", "Focus Selected"));
 
-            Menu LaneClear = spellMenu.AddSubMenu(new Menu("LaneClear", "LaneClear"));
+            Menu Clear = spellMenu.AddSubMenu(new Menu("Clear", "Clear"));
 
-            Menu JungClear = spellMenu.AddSubMenu(new Menu("JungClear", "JungClear"));
+            Menu Draw = Menu.AddSubMenu(new Menu("Draw", "Draw")); ;
 
-            Menu AutoW = spellMenu.AddSubMenu(new Menu("Auto W", "Auto W"));
+
+            spellMenu.AddItem(new MenuItem("Auto W", "Auto W targeted").SetValue(true));
+
             Harass.AddItem(new MenuItem("Use Q Harass", "Use Q Harass").SetValue(true));
-            //spellMenu.AddItem(new MenuItem("Use W Harass", "Use W Harass").SetValue(true));
-            //spellMenu.AddItem(new MenuItem("Use E Harass", "Use E Harass").SetValue(true));
+            Harass.AddItem(new MenuItem("Use W Harass", "Use W Harass").SetValue(true));
+            Harass.AddItem(new MenuItem("Use E Harass", "Use E Harass").SetValue(true));
+            Harass.AddItem(new MenuItem("Mana Harass", "Mana Harass").SetValue(new Slider(40, 0, 100)));
+
             Combo.AddItem(new MenuItem("Use Q Combo", "Use Q Combo").SetValue(true));
-            Combo.AddItem(new MenuItem("Use Q Gap", "Use Q Gap").SetValue(true));
-            Combo.AddItem(new MenuItem("Q minimum distance", "Q minimum distance").SetValue(new Slider(0, 0, 300)));
-            //spellMenu.AddItem(new MenuItem("Use W Combo", "Use W Combo").SetValue(true));
-            //spellMenu.AddItem(new MenuItem("Use E Combo", "Use E Combo").SetValue(true));
-            Combo.AddItem(new MenuItem("Use R Combo Burst", "Use R Combo Burst").SetValue(true));
-            Combo.AddItem(new MenuItem("Use R Combo Killable", "Use R Combo Killable").SetValue(true));
-            Combo.AddItem(new MenuItem("Use R Combo Save Life", "Use R Save Life").SetValue(true));
-            Combo.AddItem(new MenuItem("If HP <", "If HP <").SetValue(new Slider(20, 0, 100)));
-            Focus.AddItem(new MenuItem("force focus selected", "force focus selected").SetValue(false));
-            Focus.AddItem(new MenuItem("if selected in :", "if selected in :").SetValue(new Slider(1000, 1000, 1500)));
-            //spellMenu.AddItem(new MenuItem("Use E", "Use E")).SetValue(false);
-            foreach (var hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy))
-            {
-                AutoW.AddItem(new MenuItem("use W " + hero.SkinName, "use W " + hero.SkinName)).SetValue(true);
-            }
-            AutoW.AddItem(new MenuItem("dont W if mana <", "dont W if mana <").SetValue(new Slider(40, 0, 100)));
+            Combo.AddItem(new MenuItem("Use W Combo", "Use W Combo").SetValue(true));
+            Combo.AddItem(new MenuItem("Use E Combo", "Use E Combo").SetValue(true));
+            Combo.AddItem(new MenuItem("Use R Combo", "Use R Combo Selected").SetValue(true));
 
-            LaneClear.AddItem(new MenuItem("Use Q LaneClear", "Use Q LaneClear").SetValue(true));
-            LaneClear.AddItem(new MenuItem("Use E LaneClear", "Use E LaneClear").SetValue(true));
-            LaneClear.AddItem(new MenuItem("minimum Mana LC", "minimum Mana LC").SetValue(new Slider(40, 0, 100)));
+            Clear.AddItem(new MenuItem("Use E Clear", "Use E Clear").SetValue(true));
+            Clear.AddItem(new MenuItem("Use Timat Clear", "Use Tiamat Clear").SetValue(true));
+            Clear.AddItem(new MenuItem("minimum Mana LC", "minimum Mana Clear").SetValue(new Slider(40, 0, 100)));
 
-            JungClear.AddItem(new MenuItem("Use Q JungClear", "Use Q LaneClear").SetValue(true));
-            JungClear.AddItem(new MenuItem("Use E JungClear", "Use E LaneClear").SetValue(true));
-            JungClear.AddItem(new MenuItem("minimum Mana JC", "minimum Mana JC").SetValue(new Slider(40, 0, 100)));
-            //spellMenu.AddItem(new MenuItem("useR", "Use R to Farm").SetValue(true));
-            //spellMenu.AddItem(new MenuItem("LaughButton", "Combo").SetValue(new KeyBind(32, KeyBindType.Press)));
-            //spellMenu.AddItem(new MenuItem("ConsumeHealth", "Consume below HP").SetValue(new Slider(40, 1, 100)));
+            Draw.AddItem(new MenuItem("Draw Q", "Draw Q").SetValue(true));
+            Draw.AddItem(new MenuItem("Draw W", "Draw W").SetValue(true));
+
 
             Menu.AddToMainMenu();
 
-            //Drawing.OnDraw += Drawing_OnDraw;
+            Drawing.OnDraw += Drawing_OnDraw;
 
             Game.OnUpdate += Game_OnGameUpdate;
             Orbwalking.AfterAttack += AfterAttack;
@@ -103,28 +91,76 @@ namespace Fiora
             Obj_AI_Base.OnProcessSpellCast += oncast;
             Game.PrintChat("Welcome to FioraWorld");
         }
+        private static bool Qharass { get { return Menu.Item("Use Q Harass").GetValue<bool>(); } }
+        private static bool Wharass { get { return Menu.Item("Use W Harass").GetValue<bool>(); } }
+        private static bool Eharass { get { return Menu.Item("Use E Harass").GetValue<bool>(); } }
+        private static int Manaharass { get { return Menu.Item("Mana Harass").GetValue<Slider>().Value; } }
+        private static bool Qcombo { get { return Menu.Item("Use Q Combo").GetValue<bool>(); } }
+        private static bool Wcombo { get { return Menu.Item("Use W Combo").GetValue<bool>(); } }
+        private static bool Ecombo { get { return Menu.Item("Use E Combo").GetValue<bool>(); } }
+        private static bool Rcombo { get { return Menu.Item("Use R Combo").GetValue<bool>(); } }
+        private static bool Eclear { get { return Menu.Item("Use E Clear").GetValue<bool>(); } }
+        private static bool TimatClear { get { return Menu.Item("Use Timat Clear").GetValue<bool>(); } }
+        private static int Manaclear { get { return Menu.Item("minimum Mana LC").GetValue<Slider>().Value; } }
+        private static bool DrawQ { get { return Menu.Item("Draw Q").GetValue<bool>(); } }
+        private static bool DrawW { get { return Menu.Item("Draw W").GetValue<bool>(); } }
+        private static bool AutoW { get { return Menu.Item("Auto W").GetValue<bool>(); } }
+        private static void Drawing_OnDraw(EventArgs args)
+        {
+            if (Player.IsDead)
+                return;
+            //foreach (var x in HeroManager.Enemies.Where(x => x.IsValidTarget()))
+            //{
+            //    if (HasPassive(x))
+            //    {
+            //        var pos1 = passivepos(x);
+            //        var poses2 = PassiveRadiusPoint(x);
+            //        var pos = passivepos(x) - x.Distance(Prediction.GetPrediction(x, Player.Distance(x.Position) / 1600).UnitPosition)
+            //        * (x.Position - Prediction.GetPrediction(x, Player.Distance(x.Position) / 1600).UnitPosition).Normalized();
+            //        if (pos.IsValid())
+            //        {
+            //            Render.Circle.DrawCircle(pos, 100, Color.Yellow);
+            //        }
+            //        if (pos1.IsValid())
+            //        {
+            //            Render.Circle.DrawCircle(pos1, 100, Color.Red);
+            //        }
+            //        foreach (var y in poses2.Where(y => y.IsValid()))
+            //        {
+            //            Render.Circle.DrawCircle(y, 100, Color.Violet);
+            //        }
+
+            //    }
+            //}
+            //foreach (var x in HeroManager.Enemies.Where(x => x.IsValidTarget()))
+            //{
+            //    if (HasUltiPassive(x))
+            //    {
+            //        var poses = UltiPassivePos(x);
+            //        foreach (var y in poses)
+            //        {
+            //            Render.Circle.DrawCircle(y, 100, Color.Violet);
+            //        }
+            //    }
+            //}
+            if (DrawQ)
+                Render.Circle.DrawCircle(Player.Position, 400, Color.Green);
+            if (DrawW)
+            {
+                Render.Circle.DrawCircle(Player.Position, W.Range, Color.Green);
+            }
+        }
         public static void oncast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
         {
             var spell = args.SData;
-            if (spell.Name.ToLower().Contains("basicattack") && args.Target.Name == Player.Name )
+            if (AutoW && sender.IsEnemy && sender.IsChampion() && W.IsReady() && args.Target.IsMe && !args.SData.IsAutoAttack() &&
+                (args.SData.TargettingType == SpellDataTargetType.SelfAndUnit || args.SData.TargettingType == SpellDataTargetType.Unit))
             {
-                foreach (var hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy))
+                var target = TargetSelector.GetTarget(W.Range, TargetSelector.DamageType.Physical);
+                if (target.IsValidTarget() && !target.IsZombie)
                 {
-                    //if (hero.SkinName == sender.SkinName)
-                    //{
-                    //    if (Menu.Item("use W " + hero.SkinName).GetValue<bool>())
-                    //    {
-                    //        if ((Player.Mana / Player.MaxMana) * 100 > Menu.Item("dont W if mana <").GetValue<Slider>().Value)
-                    //        {
-                    //        }
-                    //    }
-                    //}
-
-                    if (hero.SkinName == sender.SkinName && Menu.Item("use W " + hero.SkinName).GetValue<bool>() && (Player.Mana / Player.MaxMana)*100 > Menu.Item("dont W if mana <").GetValue<Slider>().Value)
-                    {
-                        var x = Player.Position;
-                        W.Cast(x);
-                    }
+                    var x = W.GetPrediction(target).CastPosition;
+                    W.Cast(x);
                 }
             }
             if (!sender.IsMe)
@@ -132,38 +168,19 @@ namespace Fiora
             //Game.PrintChat(spell.Name);
             if (spell.Name.Contains("ItemTiamatCleave"))
             {
-                k = 0;
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
-                {
-                    l = 0;
-                }
-                Game.Say("/d");
+
             }
             if (spell.Name.Contains("FioraQ"))
             {
-                Qcount = Environment.TickCount;
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
-                {
-                    if (Qgap == 0)
-                    {
-                        l = 1;
-                    }
-                    else
-                    {
-                        l = 0;
 
-                        Qgap = 0;
-                    }
-                }
             }
-            if (spell.Name.Contains("FioraFlurry"))
+            if (spell.Name.Contains("FioraE"))
             {
-                //Utility.DelayAction.Add(30, () => Orbwalking.ResetAutoAttackTimer());
+
                 Orbwalking.ResetAutoAttackTimer();
             }
             if (spell.Name.ToLower().Contains("fiorabasicattack"))
             {
-                lastAA = Environment.TickCount;
             }
         }
         public static void OnAttack(AttackableUnit unit, AttackableUnit target)
@@ -174,397 +191,198 @@ namespace Fiora
                 if (ItemData.Youmuus_Ghostblade.GetItem().IsReady())
                     ItemData.Youmuus_Ghostblade.GetItem().Cast();
             }
-            if (target.Name == Player.Name)
-            {
-                Game.PrintChat("yes");
-                foreach (var hero in ObjectManager.Get<Obj_AI_Hero>().Where(hero => hero.IsEnemy))
-                {
-                    if (unit.Name.ToLower().Contains(hero.Name.ToLower()) && Player.Mana / Player.MaxMana > Menu.Item("dont W if mana <").GetValue<Slider>().Value)
-                    {
-                        var x = Player.Position;
-                        W.Cast(x);
-                    }
 
-                }
-            }
         }
         public static void AfterAttack(AttackableUnit unit, AttackableUnit target)
         {
             if (!unit.IsMe)
                 return;
-            //Game.PrintChat(target.Name);
-            if (!target.Name.ToLower().Contains("minion") && !target.Name.ToLower().Contains("sru") && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed )
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
-                if (!E.IsReady() && HasItem())
+                if (Ecombo && E.IsReady())
                 {
-                    k = 1;
-                    Itemcount = Environment.TickCount;
+                    E.Cast();
                 }
-                if (!E.IsReady() && !HasItem())
+                else if (HasItem())
                 {
-                    l = 0;
+                    CastItem();
                 }
-                if (E.IsReady() && Player.Mana >= E.Instance.ManaCost)
+            }
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && (unit is Obj_AI_Hero))
+            {
+                if (Eharass && E.IsReady())
                 {
-                    var x = Player.Position;
-                    E.Cast(x);
+                    E.Cast();
                 }
-                else
+                else if (HasItem())
                 {
-                    if (HasItem())
-                    {
-                        CastItem();
-                    }
+                    CastItem();
                 }
             }
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
             {
-                if (HasItem())
+                if (Eclear && E.IsReady() && Player.Mana*100/Player.MaxMana >= Manaclear)
+                {
+                    E.Cast();
+                }
+                else if (TimatClear && HasItem())
                 {
                     CastItem();
                 }
-                if (target.Name.ToLower().Contains("minion") && Menu.Item("Use E LaneClear").GetValue<bool>())
-                {
-                    if (E.IsReady() && Player.Mana / Player.MaxMana * 100 > Menu.Item("minimum Mana LC").GetValue<Slider>().Value)
-                    {
-                        E.Cast();
-                    }
-                }
-                if (target.Name.ToLower().Contains("sru") && Menu.Item("Use E JungClear").GetValue<bool>())
-                {
-                    if (E.IsReady() && Player.Mana / Player.MaxMana * 100 > Menu.Item("minimum Mana JC").GetValue<Slider>().Value)
-                    {
-                        E.Cast();
-                    }
-                }
             }
+
         }
-        public static void getItem()
-        {
-            if (k == 1)
-            {
-                CastItem();
-            }
-            if (Environment.TickCount - Itemcount >= 700)
-            {
-                k = 0;
-            }
-        }
+
         public static void Game_OnGameUpdate(EventArgs args)
         {
             if (Player.IsDead)
                 return;
-            //if (Player.Mana / Player.MaxMana > Menu.Item("minimum Mana LC").GetValue<Slider>().Value)
-            //{
-            //    Game.PrintChat("oh oh");
-            //}
-            //if (Player.IsWindingUp)
-            //{
-            //Game.PrintChat(Player.Name);
-            //}
-            //foreach (var buff in Player.Buffs)
-            //{
-            //    string x = "";
-            //    x += (buff.Name + "(" + buff.Count + ")" + ", ");
-            //    Game.PrintChat(x);
-            //}
-            //if (Player.HasBuff("talonnoxiandiplomacybuff"))
-            //{
-            //    Game.PrintChat("alright");
-            //}
-            //Game.PrintChat(Q.Instance.Name);
-            getQ();
-            getItem();
-            GetQstate();
-            //WanhDc();
-            if (Selected() == true && !Orbwalker.InAutoAttackRange(TargetSelector.GetSelectedTarget()) && !Player.IsWindingUp)
-            {
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
-                {
-                    Orbwalker.SetAttack(false);
-                }
-                else
-                {
-                    Orbwalker.SetAttack(true);
-                }
-            }
-            else
-            {
-                Orbwalker.SetAttack(true);
-            }
+            //checkobject2();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
-                if (Menu.Item("Use Q Combo").GetValue<bool>())
+                if (Qcombo)
                 {
-                    if (Menu.Item("Use Q Gap").GetValue<bool>()) 
-                    {
-                        useQGap();
-                    }
-                    useQ();
+                    castQ();
                 }
-
-                
-                //if (Menu.Item("Use W Combo").GetValue<bool>())
-                //{
-                //    useW();
-                //}
-                //if (Menu.Item("Use E Combo").GetValue<bool>())
-                //{
-                //    useE();
-                //}
-                if (Menu.Item("Use R Combo Burst").GetValue<bool>())
+                if (Wcombo)
                 {
-                    useR();
+                    castW();
                 }
-                if (Menu.Item("Use R Combo Killable").GetValue<bool>())
+                if (Rcombo)
                 {
-                    useRKS();
+                    castR();
                 }
-                if (Menu.Item("Use R Combo Save Life").GetValue<bool>())
-                {
-                    useRSL();
-                }
-
-
             }
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
             {
-                if (Menu.Item("Use Q Harass").GetValue<bool>())
+                if (Qharass)
                 {
-                    useQ();
+                    castQ();
                 }
-                //if (Menu.Item("Use W Harass").GetValue<bool>())
-                //{
-                //    useW();
-                //}
-                //if (Menu.Item("Use E Harass").GetValue<bool>())
-                //{
-                //    useE();
-                //}
-
+                if (Wharass)
+                {
+                    castW();
+                }
             }
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
             {
-                if (Menu.Item("Use Q LaneClear").GetValue<bool>())
-                {
-                    useQLC();
-                }
-                //if (Menu.Item("Use E LaneClear").GetValue<bool>())
-                //{
-                //    useELC();
-                //}
-                if (Menu.Item("Use Q JungClear").GetValue<bool>())
-                {
-                    useQJC();
-                }
-                //if (Menu.Item("Use E JungClear").GetValue<bool>())
-                //{
-                //    useEJC();
-                //}
             }
         }
-        public static bool Selected()
+        private static void castR ()
         {
-            if (!Menu.Item("force focus selected").GetValue<bool>())
+             var target = TargetSelector.GetSelectedTarget();
+            if (target.IsValidTarget(500) && !target.IsZombie && R.IsReady())
             {
-                return false;
+                R.Cast(target);
+            }
+        }
+        private static void castW()
+        {
+            var target = TargetSelector.GetTarget(W.Range, TargetSelector.DamageType.Physical);
+            if (target.IsValidTarget() && !target.IsZombie && W.IsReady())
+            {
+                W.Cast(target);
+            }
+        }
+        private static void castQ()
+        {
+            var target = TargetSelector.GetTarget(400, TargetSelector.DamageType.Physical);
+            if (target.IsValidTarget() && !target.IsZombie)
+            {
+                castQhelper(target);
             }
             else
             {
-                var target = TargetSelector.GetSelectedTarget();
-                float a = Menu.Item("if selected in :").GetValue<Slider>().Value;
-                if (target == null || target.IsDead || target.IsZombie)
+                target = TargetSelector.GetTarget(400 + Orbwalking.GetRealAutoAttackRange(Player), TargetSelector.DamageType.Physical);
                 {
-                    return false;
+                    if (target.IsValidTarget() && !target.IsZombie)
+                    {
+                        castQhelper(target);
+                    }
+                    else
+                    {
+                        target = TargetSelector.GetTarget(400 + 350, TargetSelector.DamageType.Physical);
+                        if (target.IsValidTarget() && !target.IsZombie)
+                        {
+                            castQhelper(target);
+                        }
+                    }
+                }
+            }
+        }
+        public static void castQhelper(Obj_AI_Base target)
+        {
+            if (HasPassive(target))
+            {
+                var poses = PassiveRadiusPoint(target);
+                var pos = passivepos(target) - target.Distance(Prediction.GetPrediction(target, Player.Distance(target.Position) / 1600).UnitPosition)
+                    * (target.Position - Prediction.GetPrediction(target, Player.Distance(target.Position) / 1600).UnitPosition).Normalized();
+                var possibleposes = new List<Vector3>();
+                for (int i = 0; i <= 400; i = i + 20)
+                {
+                    var p = Player.Position.Extend(pos, i);
+                    possibleposes.Add(p);
+                }
+                var castpos = possibleposes.Where(x => x.InTheCone(poses, target.Position) && x.Distance(Prediction.GetPrediction(target, Player.Position.Distance(x) / 1600).UnitPosition) <= 300)
+                                            .OrderByDescending(x => 1 - x.Distance(Prediction.GetPrediction(target, Player.Position.Distance(x) / 1600).UnitPosition))
+                                            .FirstOrDefault();
+                if (castpos != null)
+                {
+                    Q.Cast(castpos);
+                }
+                else 
+                {
+                    var pos1 = target.Position;
+                    var pos2 = Player.Position.Extend(Prediction.GetPrediction(target, Player.Position.Distance(target.Position) / 1600).UnitPosition,
+                        400 < Player.Distance(Prediction.GetPrediction(target, Player.Position.Distance(target.Position) / 1600).UnitPosition) ?
+                        400 : Player.Distance(Prediction.GetPrediction(target, Player.Position.Distance(target.Position) / 1600).UnitPosition));
+                    if (pos2.Distance(Prediction.GetPrediction(target, Player.Position.Distance(pos2) / 1600).UnitPosition) <= 300)
+                    {
+                        Q.Cast(pos2);
+                    }
+                    else if (pos1.Distance(Prediction.GetPrediction(target, Player.Position.Distance(pos1) / 1600).UnitPosition) <= 300)
+                    {
+                        Q.Cast(pos1);
+                    }
+                }
+            }
+            else if (HasUltiPassive(target))
+            {
+                var poses = UltiPassivePos(target);
+                var castpos = poses.OrderByDescending(x => 1 - x.Distance(Prediction.GetPrediction(target, 0.1f).UnitPosition)).FirstOrDefault();
+                if (castpos != null)
+                {
+                    Q.Cast(castpos);
                 }
                 else
                 {
-                    if (Player.Distance(target.Position) > a)
+                    var pos1 = target.Position;
+                    var pos2 = Player.Position.Extend(Prediction.GetPrediction(target, Player.Position.Distance(target.Position) / 1600).UnitPosition,
+                        400 < Player.Distance(Prediction.GetPrediction(target, Player.Position.Distance(target.Position) / 1600).UnitPosition) ?
+                        400 : Player.Distance(Prediction.GetPrediction(target, Player.Position.Distance(target.Position) / 1600).UnitPosition));
+                    if (pos2.Distance(Prediction.GetPrediction(target, Player.Position.Distance(pos2) / 1600).UnitPosition) <= 300)
                     {
-                        return false;
+                        Q.Cast(pos2);
                     }
-                    return true;
+                    else if (pos1.Distance(Prediction.GetPrediction(target, Player.Position.Distance(pos1) / 1600).UnitPosition) <= 300)
+                    {
+                        Q.Cast(pos1);
+                    }
                 }
-            }
-        }
-
-        public static Obj_AI_Base gettarget(float range)
-        {
-            if (Selected())
-            {
-                return TargetSelector.GetSelectedTarget();
             }
             else
             {
-                return TargetSelector.GetTarget(range, TargetSelector.DamageType.Physical);
-            }
-        }
-
-        public static void useQ()
-        {
-            var target = gettarget(600);
-            if (Player.Distance(target.Position) <= 600)
-            {
-                //if (target != null && target.IsValidTarget() && !target.IsZombie && Orbwalking.CanAttack() && Q.IsReady() && l == 0 && !Orbwalker.InAutoAttackRange(target))
-                //{
-                //    Q.Cast(target);
-                //}
-                //if (target != null && target.IsValidTarget() && !target.IsZombie && Q.IsReady() && l == 0 && Orbwalker.InAutoAttackRange(target))
-                //{
-                //    Q.Cast(target);
-                //}
-                //if (Selected() && !Orbwalker.InAutoAttackRange(target))
-                //{
-                //    Q.Cast(target);
-                //}
-                var x = Menu.Item("Q minimum distance").GetValue<Slider>().Value;
-                if (target != null && target.IsValidTarget() && !target.IsZombie && WanhDc() && Q.IsReady() && l == 0 && Player.Distance(target.Position) >= x)
+                var pos1 = target.Position;
+                var pos2 = Player.Position.Extend(Prediction.GetPrediction(target, Player.Position.Distance(target.Position) / 1600).UnitPosition,
+                    400 < Player.Distance(Prediction.GetPrediction(target, Player.Position.Distance(target.Position) / 1600).UnitPosition)? 
+                    400 : Player.Distance(Prediction.GetPrediction(target, Player.Position.Distance(target.Position) / 1600).UnitPosition ));
+                if (pos2.Distance(Prediction.GetPrediction(target, Player.Position.Distance(pos2) / 1600).UnitPosition) <= 300)
                 {
-                    Q.Cast(target);
+                    Q.Cast(pos2);
                 }
-                if (target != null && target.IsValidTarget() && !target.IsZombie && WanhDc() && Q.IsReady() && l == 0 && Qstate == 2)
+                else if (pos1.Distance(Prediction.GetPrediction(target, Player.Position.Distance(pos1) / 1600).UnitPosition) <= 300)
                 {
-                    Q.Cast(target);
-                }
-                var Qdmg = Damage.GetSpellDamage(Player,target, SpellSlot.Q);
-                var dmg = Damage.CalcDamage(Player, target, Damage.DamageType.Physical, Player.BaseAttackDamage + Player.FlatPhysicalDamageMod);
-                bool kill = Qdmg + dmg >= target.Health;
-                if (target != null && target.IsValidTarget() && !target.IsZombie && WanhDc() && Q.IsReady() && l == 0 && kill)
-                {
-                    Q.Cast(target);
-                }
-            }
-
-        }
-        public static void getQ()
-        {
-            var target = gettarget(270);
-            if (target == null && !Player.IsDashing())
-                l = 0;
-            if (!Orbwalking.InAutoAttackRange(target) && !Player.IsDashing())
-                l = 0;
-
-        }
-        public static void useR()
-        {
-            var target = gettarget(400);
-            if (R.IsReady() && target != null && target.IsValidTarget() && !target.IsZombie && !Q.IsReady() && !E.IsReady() && l == 0 && Player.Distance(target.Position) <= 400)
-            {
-                if (Orbwalker.InAutoAttackRange(target) && !WanhDc() && !Player.IsWindingUp)
-                {
-                    R.Cast(target);
-                }
-                if (!Orbwalker.InAutoAttackRange(target) && !Player.IsWindingUp)
-                {
-                    R.Cast(target);
-                }
-            }
-        }
-        public static void useRKS()
-        {
-            var target = gettarget(400);
-            var damage = new double[] { 300, 475, 650 }[R.Level - 1] + 0.9 * Player.FlatPhysicalDamageMod;
-            double truedmg;
-            if (target.CountEnemiesInRange(700) == 1)
-            {
-                truedmg = damage * 2.6;
-            }
-            else if ( target.CountEnemiesInRange(700) == 2)
-            {
-                truedmg = damage * 1.8;
-            }
-            else
-            {
-                truedmg = damage * 1.4;
-            }
-            if (R.IsReady() && target != null && target.IsValidTarget() && !target.IsZombie && !Q.IsReady() && !E.IsReady() && l == 0 && Player.Distance(target.Position) <= 400)
-            {
-                if (Damage.CalcDamage(Player,target,Damage.DamageType.Physical,truedmg) > target.Health)
-                {
-                    if (Orbwalker.InAutoAttackRange(target) && !WanhDc() && !Player.IsWindingUp)
-                    {
-                        R.Cast(target);
-                    }
-                    if (!Orbwalker.InAutoAttackRange(target) && !Player.IsWindingUp)
-                    {
-                        R.Cast(target);
-                    }
-                }
-            }
-
-
-
-        }
-        public static void useRSL()
-        {
-            var target = gettarget(400);
-            if ( Player.Health/Player.MaxHealth*100 <= Menu.Item("If HP <").GetValue<Slider>().Value)
-            {
-                if( target != null && target.IsValidTarget() && !target.IsZombie && Player.Distance(target.Position) <= 400 )
-                {
-                    R.Cast(target);
-                }
-            }
-        }
-
-        public static void useQJC()
-        {
-            var target = MinionManager.GetMinions(Player.Position, 600, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth).FirstOrDefault();
-            if (target.IsValidTarget() && !target.IsZombie && Q.IsReady() && !Player.IsWindingUp && !Player.IsDashing())
-            {
-                if (Qstate == 0 && Player.Mana / Player.MaxMana * 100 > Menu.Item("minimum Mana LC").GetValue<Slider>().Value)
-                {
-                    Q.Cast(target);
-                }
-                if (Qstate == 1 || Qstate == 2)
-                {
-                    Q.Cast(target);
-                }
-            }
-        }
-        public static void useQLC()
-        {
-            var target = MinionManager.GetMinions(Player.Position, 600, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health).FirstOrDefault();
-            if (target.IsValidTarget() && !target.IsZombie && Q.IsReady() && !Player.IsWindingUp && !Player.IsDashing())
-            {
-                if (Qstate == 0 && Player.Mana / Player.MaxMana * 100 > Menu.Item("minimum Mana JC").GetValue<Slider>().Value)
-                {
-                    Q.Cast(target);
-                }
-                if (Qstate == 1 || Qstate == 2)
-                {
-                    Q.Cast(target);
-                }
-            }
-        }
-        public static void useQGap()
-        {
-            var target = gettarget(1100);
-            if (target != null && target.IsValidTarget() && !target.IsZombie && Player.Distance(target.Position) <= 1100 && Player.Distance(target.Position)>600)
-            {
-                if (Qstate == 0 && !Player.IsWindingUp && !Player.IsDashing() && Q.IsReady())
-                {
-                    Obj_AI_Base x = null;
-                    float y = 600;
-                    foreach (var one in ObjectManager.Get<Obj_AI_Base>().Where(one => one.IsEnemy && Player.Distance(one.Position) <= 600))
-                    {
-                        if (one.Type == GameObjectType.obj_AI_Hero || one.IsMinion)
-                        {
-                            if (one.IsValidTarget() && !one.IsZombie && one.Distance(target.Position) <= 550 && Player.Distance(one.Position) <= 600)
-                            {
-                                if (one.Distance(target.Position) < y)
-                                {
-                                    y = one.Distance(target.Position);
-                                    x = one;
-                                }
-                            }
-                        }
-                    }
-                    if (x != null && WanhDc())
-                    {
-                        Qgap = 1;
-                        Q.Cast(x);
-                    }
+                    Q.Cast(pos1);
                 }
             }
         }
@@ -587,26 +405,215 @@ namespace Fiora
             if (ItemData.Ravenous_Hydra_Melee_Only.GetItem().IsReady())
                 ItemData.Ravenous_Hydra_Melee_Only.GetItem().Cast();
         }
-        public static bool WanhDc()
+        public static bool HasPassive (Obj_AI_Base target)
         {
-            return Environment.TickCount + Game.Ping / 2 + 25 >= lastAA + Player.AttackDelay * 1000;
-        }
-        public static void GetQstate()
-        {
-            if (Environment.TickCount - Qcount >= 4000)
-            {
-                Qstate = 0;
-            }
-            if (Environment.TickCount - Qcount >=3500 && Environment.TickCount - Qcount < 4000 && Qstate == 1)
-            {
-                Qstate = 2;
-            }
-            if (Environment.TickCount - Qcount <= 4000 && Qstate ==0 )
-            {
-                Qstate = 1;
-            }
-
+            return FioraPassiveObjects.Any(x => x.Position.Distance(target.Position) <= 50);
         }
 
+        public static Vector3 passivepos (Obj_AI_Base target)
+        {
+            if (HasPassive(target))
+            {
+                var passive = FioraPassiveObjects.Where(x => x.Position.Distance(target.Position) <= 50).FirstOrDefault();
+                if (passive != null)
+                {
+                    if (passive.Name.Contains("NE"))
+                    {
+                        var pos = new Vector2();
+                        pos.X = target.Position.To2D().X;
+                        pos.Y = target.Position.To2D().Y +150;
+                        return pos.To3D();
+                    }
+                    if (passive.Name.Contains("SE"))
+                    {
+                        var pos = new Vector2();
+                        pos.X = target.Position.To2D().X -150;
+                        pos.Y = target.Position.To2D().Y;
+                        return pos.To3D();
+                    }
+                    if (passive.Name.Contains("NW"))
+                    {
+                        var pos = new Vector2();
+                        pos.X = target.Position.To2D().X + 150;
+                        pos.Y = target.Position.To2D().Y;
+                        return pos.To3D();
+                    }
+                    if (passive.Name.Contains("SW"))
+                    {
+                        var pos = new Vector2();
+                        pos.X = target.Position.To2D().X;
+                        pos.Y = target.Position.To2D().Y - 150;
+                        return pos.To3D();
+                    }
+                    return new Vector3();
+                }
+                return new Vector3();
+            }
+            return new Vector3();
+        }
+        public static List<Vector3> PassiveRadiusPoint (Obj_AI_Base target)
+        {
+            if(HasPassive(target))
+            {
+                var passive = FioraPassiveObjects.Where(x => x.Position.Distance(target.Position) <= 50).FirstOrDefault();
+                if (passive != null)
+                {
+                    if (passive.Name.Contains("NE"))
+                    {
+                        var pos1 = new Vector2();
+                        var pos2 = new Vector2();
+                        pos1.X = target.Position.To2D().X + 150 /(float) Math.Sqrt(2);
+                        pos2.X = target.Position.To2D().X - 150 / (float)Math.Sqrt(2);
+                        pos1.Y = target.Position.To2D().Y + 150 / (float)Math.Sqrt(2);
+                        pos2.Y = target.Position.To2D().Y + 150 / (float)Math.Sqrt(2);
+                        return new List<Vector3>() { pos1.To3D(), pos2.To3D() };
+                    }
+                    if (passive.Name.Contains("SE"))
+                    {
+                        var pos1 = new Vector2();
+                        var pos2 = new Vector2();
+                        pos1.X = target.Position.To2D().X - 150 / (float)Math.Sqrt(2);
+                        pos2.X = target.Position.To2D().X - 150 / (float)Math.Sqrt(2);
+                        pos1.Y = target.Position.To2D().Y - 150 / (float)Math.Sqrt(2);
+                        pos2.Y = target.Position.To2D().Y + 150 / (float)Math.Sqrt(2);
+                        return new List<Vector3>() { pos1.To3D(), pos2.To3D() };
+                    }
+                    if (passive.Name.Contains("NW"))
+                    {
+                        var pos1 = new Vector2();
+                        var pos2 = new Vector2();
+                        pos1.X = target.Position.To2D().X + 150 / (float)Math.Sqrt(2);
+                        pos2.X = target.Position.To2D().X + 150 / (float)Math.Sqrt(2);
+                        pos1.Y = target.Position.To2D().Y - 150 / (float)Math.Sqrt(2);
+                        pos2.Y = target.Position.To2D().Y + 150 / (float)Math.Sqrt(2);
+                        return new List<Vector3>() { pos1.To3D(), pos2.To3D() };
+                    }
+                    if (passive.Name.Contains("SW"))
+                    {
+                        var pos1 = new Vector2();
+                        var pos2 = new Vector2();
+                        pos1.X = target.Position.To2D().X + 150 / (float)Math.Sqrt(2);
+                        pos2.X = target.Position.To2D().X - 150 / (float)Math.Sqrt(2);
+                        pos1.Y = target.Position.To2D().Y - 150 / (float)Math.Sqrt(2);
+                        pos2.Y = target.Position.To2D().Y - 150 / (float)Math.Sqrt(2);
+                        return new List<Vector3>() { pos1.To3D(), pos2.To3D() };
+                    }
+                    return new List<Vector3>();
+                }
+                else
+                {
+                    return new List<Vector3>();
+                }
+            }
+            else
+            {
+                return new List<Vector3>();
+            }
+        }
+        public static bool InTheCone (this Vector3 pos, List<Vector3> poses, Vector3 targetpos)
+        {
+            bool x = true;
+            foreach (var i in poses)
+            {
+                if (AngleBetween(pos.To2D(),targetpos.To2D(),i.To2D()) >90)
+                    x = false;
+            }
+            return x;
+        }
+        private static bool HasUltiPassive (Obj_AI_Base target)
+        {
+            return ObjectManager.Get<GameObject>()
+                .Where(x => x.Name.Contains("Fiora_Base_R_Mark") || (x.Name.Contains("Fiora_Base_R")&& x.Name.Contains("Timeout_FioraOnly.troy"))).Any(x => x.Position.Distance(target.Position) <= 50);
+        }
+        private static List<Vector3> UltiPassivePos (Obj_AI_Base target)
+        {
+            List<Vector3> poses = new List<Vector3>();
+            if (HasUltiPassive(target))
+            {
+                var passive = ObjectManager.Get<GameObject>()
+                    .Where(x => x.Name.Contains("Fiora_Base_R_Mark") || (x.Name.Contains("Fiora_Base_R") && x.Name.Contains("Timeout_FioraOnly.troy")));
+                foreach (var x in passive)
+                {
+                    if (x.Name.Contains("NE"))
+                    {
+                        var pos = new Vector2();
+                        pos.X = target.Position.To2D().X;
+                        pos.Y = target.Position.To2D().Y + 150;
+                        poses.Add(pos.To3D());
+                    }
+                    else if (x.Name.Contains("SE"))
+                    {
+                        var pos = new Vector2();
+                        pos.X = target.Position.To2D().X - 150;
+                        pos.Y = target.Position.To2D().Y;
+                        poses.Add(pos.To3D());
+                    }
+                    else if (x.Name.Contains("NW"))
+                    {
+                        var pos = new Vector2();
+                        pos.X = target.Position.To2D().X + 150;
+                        pos.Y = target.Position.To2D().Y;
+                        poses.Add(pos.To3D());
+                    }
+                    else if (x.Name.Contains("SW"))
+                    {
+                        var pos = new Vector2();
+                        pos.X = target.Position.To2D().X;
+                        pos.Y = target.Position.To2D().Y - 150;
+                        poses.Add(pos.To3D());
+                    }
+                }
+            }
+            return poses;
+        }
+        private static void checkobject()
+        {
+            var target = ObjectManager.Get<GameObject>().Where(x => x.Position.Distance(Game.CursorPos) <= 200 && x.Name != "ardailker")
+                .OrderByDescending(x => 1 - x.Position.Distance(Game.CursorPos)).FirstOrDefault(); ;
+            String temp = "";
+           temp += (" " + target.Name + " ");
+            Game.PrintChat(temp);
+        }
+        private static void checkobject2()
+        {
+            var target = ObjectManager.Get<GameObject>().Where(x => x.Name.ToLower().Contains("fiora")
+                && x.Name.ToLower().Contains("sw"));
+            String temp = "";
+            foreach(var x in target)
+            {
+                temp += (" " + x.Name + " ");
+            }
+            Game.PrintChat(temp);
+        }
+        private static List<GameObject> FioraPassiveObjects
+        {
+            get
+            {
+                var x = ObjectManager.Get<GameObject>().Where(a => FioraPassiveName.Contains(a.Name)).ToList();
+                return x;
+            }
+        }
+        private static List<string> FioraPassiveName = new List<string>()
+        {
+            "Fiora_Base_Passive_NE.troy",
+            "Fiora_Base_Passive_SE.troy",
+            "Fiora_Base_Passive_NW.troy",
+            "Fiora_Base_Passive_SW.troy",
+            "Fiora_Base_Passive_NE_Timeout.troy",
+            "Fiora_Base_Passive_SE_Timeout.troy",
+            "Fiora_Base_Passive_NW_Timeout.troy",
+            "Fiora_Base_Passive_SW_Timeout.troy",
+        };
+        public static double AngleBetween(Vector2 a, Vector2 b, Vector2 c)
+        {
+            float a1 = c.Distance(b);
+            float b1 = a.Distance(c);
+            float c1 = b.Distance(a);
+            if (a1 == 0 || c1 == 0) { return 0; }
+            else
+            {
+                return Math.Acos((a1 * a1 + c1 * c1 - b1 * b1) / (2 * a1 * c1)) * (180 / Math.PI);
+            }
+        }
     }
 }
