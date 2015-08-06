@@ -332,15 +332,10 @@ namespace Fiora
                 }
                 else 
                 {
-                    var pos1 = target.Position;
-                    var pos2 = Player.Position.Extend(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition,
-                        400 < Player.Distance(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition) ?
-                        400 : Player.Distance(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition));
-                    if (pos2.Distance(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition) <= 300)
-                    {
-                        Q.Cast(pos2);
-                    }
-                    else if (pos1.Distance(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition) <= 300)
+                    var pos1 = Player.Position.Extend(target.Position, 400);
+                    if (Player.Distance(target.Position) < 400)
+                        pos1 = target.Position;
+                    if (pos1.Distance(target.Position) <= 300)
                     {
                         Q.Cast(pos1);
                     }
@@ -356,15 +351,10 @@ namespace Fiora
                 }
                 else
                 {
-                    var pos1 = target.Position;
-                    var pos2 = Player.Position.Extend(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition,
-                        400 < Player.Distance(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition) ?
-                        400 : Player.Distance(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition));
-                    if (pos2.Distance(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition) <= 300)
-                    {
-                        Q.Cast(pos2);
-                    }
-                    else if (pos1.Distance(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition) <= 300)
+                    var pos1 = Player.Position.Extend(target.Position, 400);
+                    if (Player.Distance(target.Position) < 400)
+                        pos1 = target.Position;
+                    if (pos1.Distance(target.Position) <= 300)
                     {
                         Q.Cast(pos1);
                     }
@@ -372,15 +362,10 @@ namespace Fiora
             }
             else
             {
-                var pos1 = target.Position;
-                var pos2 = Player.Position.Extend(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition,
-                    400 < Player.Distance(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition) ?
-                    400 : Player.Distance(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition));
-                if (pos2.Distance(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition) <= 300)
-                {
-                    Q.Cast(pos2);
-                }
-                else if (pos1.Distance(Prediction.GetPrediction(target, (Player.Position.Distance(target.Position) > 400 ? 400 : Player.Position.Distance(target.Position)) / 1600).UnitPosition) <= 300)
+                var pos1 = Player.Position.Extend(target.Position, 400);
+                if (Player.Distance(target.Position) < 400)
+                    pos1 = target.Position;
+                if (pos1.Distance(target.Position) <= 300)
                 {
                     Q.Cast(pos1);
                 }
