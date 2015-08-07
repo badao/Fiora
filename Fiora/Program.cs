@@ -153,7 +153,7 @@ namespace Fiora
         public static void oncast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
         {
             var spell = args.SData;
-            if (AutoW && sender.IsEnemy && sender.IsChampion() && W.IsReady() && args.Target.IsMe && !args.SData.IsAutoAttack() &&
+            if (AutoW && sender.IsEnemy && HeroManager.Enemies.Any(x => x.NetworkId == sender.NetworkId) && W.IsReady() && args.Target != null && args.Target.IsMe && !args.SData.IsAutoAttack() &&
                 (args.SData.TargettingType == SpellDataTargetType.SelfAndUnit || args.SData.TargettingType == SpellDataTargetType.Unit))
             {
                 var target = TargetSelector.GetTarget(W.Range, TargetSelector.DamageType.Physical);
