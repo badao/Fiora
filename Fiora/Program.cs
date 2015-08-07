@@ -174,7 +174,7 @@ namespace Fiora
             {
 
             }
-            if (spell.Name.Contains("FioraE"))
+            if (spell.Name == "FioraE")
             {
 
                 Orbwalking.ResetAutoAttackTimer();
@@ -325,7 +325,7 @@ namespace Fiora
                 var castpos = possibleposes.Where(x => x.To3D().InTheCone(poses, target.Position) && x.Distance(target.Position.To2D()) <= 300)
                                             .OrderByDescending(x => 1 - x.Distance(target.Position.To2D()))
                                             .FirstOrDefault();
-                if (castpos != null)
+                if (castpos != null && castpos.IsValid() && castpos.Distance(target.Position.To2D()) <= 300)
                 {
                     Q.Cast(castpos);
                 }
