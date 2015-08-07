@@ -109,40 +109,6 @@ namespace Fiora
         {
             if (Player.IsDead)
                 return;
-            //foreach (var x in HeroManager.Enemies.Where(x => x.IsValidTarget()))
-            //{
-            //    if (HasPassive(x))
-            //    {
-            //        var pos1 = passivepos(x);
-            //        var poses2 = PassiveRadiusPoint(x);
-            //        var pos = passivepos(x).To2D() - x.Position.To2D().Distance(Prediction.GetPrediction(x, 0.25f).UnitPosition.To2D())
-            //            * (x.Position.To2D() - Prediction.GetPrediction(x, 0.25f).UnitPosition.To2D()).Normalized();
-            //        if (pos.IsValid())
-            //        {
-            //            Render.Circle.DrawCircle(pos.To3D(), 100, Color.Yellow);
-            //        }
-            //        if (pos1.IsValid())
-            //        {
-            //            Render.Circle.DrawCircle(pos1, 100, Color.Red);
-            //        }
-            //        foreach (var y in poses2.Where(y => y.IsValid()))
-            //        {
-            //            Render.Circle.DrawCircle(y, 100, Color.Violet);
-            //        }
-
-            //    }
-            //}
-            //foreach (var x in HeroManager.Enemies.Where(x => x.IsValidTarget()))
-            //{
-            //    if (HasUltiPassive(x))
-            //    {
-            //        var poses = UltiPassivePos(x);
-            //        foreach (var y in poses)
-            //        {
-            //            Render.Circle.DrawCircle(y, 100, Color.Violet);
-            //        }
-            //    }
-            //}
             if (DrawQ)
                 Render.Circle.DrawCircle(Player.Position, 400, Color.Green);
             if (DrawW)
