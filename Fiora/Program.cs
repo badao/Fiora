@@ -115,11 +115,11 @@ namespace Fiora
             //    {
             //        var pos1 = passivepos(x);
             //        var poses2 = PassiveRadiusPoint(x);
-            //        var pos = passivepos(x) - x.Distance(Prediction.GetPrediction(x, Player.Distance(x.Position) / 1600).UnitPosition)
-            //        * (x.Position - Prediction.GetPrediction(x, Player.Distance(x.Position) / 1600).UnitPosition).Normalized();
+            //        var pos = passivepos(x).To2D() - x.Position.To2D().Distance(Prediction.GetPrediction(x, 0.25f).UnitPosition.To2D())
+            //            * (x.Position.To2D() - Prediction.GetPrediction(x, 0.25f).UnitPosition.To2D()).Normalized();
             //        if (pos.IsValid())
             //        {
-            //            Render.Circle.DrawCircle(pos, 100, Color.Yellow);
+            //            Render.Circle.DrawCircle(pos.To3D(), 100, Color.Yellow);
             //        }
             //        if (pos1.IsValid())
             //        {
@@ -315,16 +315,15 @@ namespace Fiora
             if (HasPassive(target))
             {
                 var poses = PassiveRadiusPoint(target);
-                var pos = passivepos(target) - target.Distance(Prediction.GetPrediction(target, Player.Distance(target.Position) / 1600).UnitPosition)
-                    * (target.Position - Prediction.GetPrediction(target, Player.Distance(target.Position) / 1600).UnitPosition).Normalized();
-                var possibleposes = new List<Vector3>();
+                var pos = target.Position.To2D().Extend(passivepos(target).To2D(),200);
+                 var possibleposes = new List<Vector2>();
                 for (int i = 0; i <= 400; i = i + 20)
                 {
-                    var p = Player.Position.Extend(pos, i);
+                    var p = Player.Position.To2D().Extend(pos, i);
                     possibleposes.Add(p);
                 }
-                var castpos = possibleposes.Where(x => x.InTheCone(poses, target.Position) && x.Distance(Prediction.GetPrediction(target, Player.Position.Distance(x) / 1600).UnitPosition) <= 300)
-                                            .OrderByDescending(x => 1 - x.Distance(Prediction.GetPrediction(target, Player.Position.Distance(x) / 1600).UnitPosition))
+                var castpos = possibleposes.Where(x => x.To3D().InTheCone(poses, target.Position) && x.Distance(target.Position.To2D()) <= 300)
+                                            .OrderByDescending(x => 1 - x.Distance(target.Position.To2D()))
                                             .FirstOrDefault();
                 if (castpos != null)
                 {
@@ -344,7 +343,7 @@ namespace Fiora
             else if (HasUltiPassive(target))
             {
                 var poses = UltiPassivePos(target);
-                var castpos = poses.OrderByDescending(x => 1 - x.Distance(Prediction.GetPrediction(target, 0.1f).UnitPosition)).FirstOrDefault();
+                var castpos = poses.OrderByDescending(x => 1 - x.Distance(target.Position)).FirstOrDefault();
                 if (castpos != null)
                 {
                     Q.Cast(castpos);
@@ -406,20 +405,20 @@ namespace Fiora
                     {
                         var pos = new Vector2();
                         pos.X = target.Position.To2D().X;
-                        pos.Y = target.Position.To2D().Y +150;
+                        pos.Y = target.Position.To2D().Y +200;
                         return pos.To3D();
                     }
                     if (passive.Name.Contains("SE"))
                     {
                         var pos = new Vector2();
-                        pos.X = target.Position.To2D().X -150;
+                        pos.X = target.Position.To2D().X -200;
                         pos.Y = target.Position.To2D().Y;
                         return pos.To3D();
                     }
                     if (passive.Name.Contains("NW"))
                     {
                         var pos = new Vector2();
-                        pos.X = target.Position.To2D().X + 150;
+                        pos.X = target.Position.To2D().X + 200;
                         pos.Y = target.Position.To2D().Y;
                         return pos.To3D();
                     }
@@ -427,7 +426,7 @@ namespace Fiora
                     {
                         var pos = new Vector2();
                         pos.X = target.Position.To2D().X;
-                        pos.Y = target.Position.To2D().Y - 150;
+                        pos.Y = target.Position.To2D().Y - 200;
                         return pos.To3D();
                     }
                     return new Vector3();
@@ -447,40 +446,40 @@ namespace Fiora
                     {
                         var pos1 = new Vector2();
                         var pos2 = new Vector2();
-                        pos1.X = target.Position.To2D().X + 150 /(float) Math.Sqrt(2);
-                        pos2.X = target.Position.To2D().X - 150 / (float)Math.Sqrt(2);
-                        pos1.Y = target.Position.To2D().Y + 150 / (float)Math.Sqrt(2);
-                        pos2.Y = target.Position.To2D().Y + 150 / (float)Math.Sqrt(2);
+                        pos1.X = target.Position.To2D().X + 200 /(float) Math.Sqrt(2);
+                        pos2.X = target.Position.To2D().X - 200 / (float)Math.Sqrt(2);
+                        pos1.Y = target.Position.To2D().Y + 200 / (float)Math.Sqrt(2);
+                        pos2.Y = target.Position.To2D().Y + 200 / (float)Math.Sqrt(2);
                         return new List<Vector3>() { pos1.To3D(), pos2.To3D() };
                     }
                     if (passive.Name.Contains("SE"))
                     {
                         var pos1 = new Vector2();
                         var pos2 = new Vector2();
-                        pos1.X = target.Position.To2D().X - 150 / (float)Math.Sqrt(2);
-                        pos2.X = target.Position.To2D().X - 150 / (float)Math.Sqrt(2);
-                        pos1.Y = target.Position.To2D().Y - 150 / (float)Math.Sqrt(2);
-                        pos2.Y = target.Position.To2D().Y + 150 / (float)Math.Sqrt(2);
+                        pos1.X = target.Position.To2D().X - 200 / (float)Math.Sqrt(2);
+                        pos2.X = target.Position.To2D().X - 200 / (float)Math.Sqrt(2);
+                        pos1.Y = target.Position.To2D().Y - 200 / (float)Math.Sqrt(2);
+                        pos2.Y = target.Position.To2D().Y + 200 / (float)Math.Sqrt(2);
                         return new List<Vector3>() { pos1.To3D(), pos2.To3D() };
                     }
                     if (passive.Name.Contains("NW"))
                     {
                         var pos1 = new Vector2();
                         var pos2 = new Vector2();
-                        pos1.X = target.Position.To2D().X + 150 / (float)Math.Sqrt(2);
-                        pos2.X = target.Position.To2D().X + 150 / (float)Math.Sqrt(2);
-                        pos1.Y = target.Position.To2D().Y - 150 / (float)Math.Sqrt(2);
-                        pos2.Y = target.Position.To2D().Y + 150 / (float)Math.Sqrt(2);
+                        pos1.X = target.Position.To2D().X + 200 / (float)Math.Sqrt(2);
+                        pos2.X = target.Position.To2D().X + 200 / (float)Math.Sqrt(2);
+                        pos1.Y = target.Position.To2D().Y - 200 / (float)Math.Sqrt(2);
+                        pos2.Y = target.Position.To2D().Y + 200 / (float)Math.Sqrt(2);
                         return new List<Vector3>() { pos1.To3D(), pos2.To3D() };
                     }
                     if (passive.Name.Contains("SW"))
                     {
                         var pos1 = new Vector2();
                         var pos2 = new Vector2();
-                        pos1.X = target.Position.To2D().X + 150 / (float)Math.Sqrt(2);
-                        pos2.X = target.Position.To2D().X - 150 / (float)Math.Sqrt(2);
-                        pos1.Y = target.Position.To2D().Y - 150 / (float)Math.Sqrt(2);
-                        pos2.Y = target.Position.To2D().Y - 150 / (float)Math.Sqrt(2);
+                        pos1.X = target.Position.To2D().X + 200 / (float)Math.Sqrt(2);
+                        pos2.X = target.Position.To2D().X - 200 / (float)Math.Sqrt(2);
+                        pos1.Y = target.Position.To2D().Y - 200 / (float)Math.Sqrt(2);
+                        pos2.Y = target.Position.To2D().Y - 200 / (float)Math.Sqrt(2);
                         return new List<Vector3>() { pos1.To3D(), pos2.To3D() };
                     }
                     return new List<Vector3>();
@@ -523,20 +522,20 @@ namespace Fiora
                     {
                         var pos = new Vector2();
                         pos.X = target.Position.To2D().X;
-                        pos.Y = target.Position.To2D().Y + 150;
+                        pos.Y = target.Position.To2D().Y + 200;
                         poses.Add(pos.To3D());
                     }
                     else if (x.Name.Contains("SE"))
                     {
                         var pos = new Vector2();
-                        pos.X = target.Position.To2D().X - 150;
+                        pos.X = target.Position.To2D().X - 200;
                         pos.Y = target.Position.To2D().Y;
                         poses.Add(pos.To3D());
                     }
                     else if (x.Name.Contains("NW"))
                     {
                         var pos = new Vector2();
-                        pos.X = target.Position.To2D().X + 150;
+                        pos.X = target.Position.To2D().X + 200;
                         pos.Y = target.Position.To2D().Y;
                         poses.Add(pos.To3D());
                     }
@@ -544,7 +543,7 @@ namespace Fiora
                     {
                         var pos = new Vector2();
                         pos.X = target.Position.To2D().X;
-                        pos.Y = target.Position.To2D().Y - 150;
+                        pos.Y = target.Position.To2D().Y - 200;
                         poses.Add(pos.To3D());
                     }
                 }
