@@ -178,7 +178,7 @@ namespace Fiora
         public static void oncast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
         {
             var spell = args.SData;
-            if (AutoW && sender.IsEnemy && HeroManager.Enemies.Any(x => x.NetworkId == sender.NetworkId) && W.IsReady() && args.Target != null && args.Target.IsMe && !args.SData.IsAutoAttack() &&
+            if (AutoW && W.IsReady() && args.Target != null && args.Target.IsMe && !args.SData.IsAutoAttack() && sender.IsEnemy && HeroManager.Enemies.Any(x => x.NetworkId == sender.NetworkId) && W.IsReady() &&
                 (args.SData.TargettingType == SpellDataTargetType.SelfAndUnit || args.SData.TargettingType == SpellDataTargetType.Unit))
             {
                 var target = TargetSelector.GetTarget(W.Range, TargetSelector.DamageType.Physical);
@@ -265,26 +265,26 @@ namespace Fiora
             //checkobject2();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
-                if (Qcombo)
+                if (Qcombo && Orbwalking.CanAttack() && Orbwalking.CanMove(80))
                 {
                     castQ();
                 }
-                if (Wcombo)
+                if (Wcombo && (!Orbwalking.CanAttack()) && Orbwalking.CanMove(80))
                 {
                     castW();
                 }
-                if (Rcombo)
+                if (Rcombo  && Orbwalking.CanMove(80))
                 {
                     castR();
                 }
             }
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
             {
-                if (Qharass)
+                if (Qharass && Orbwalking.CanAttack() && Orbwalking.CanMove(80))
                 {
                     castQ();
                 }
-                if (Wharass)
+                if (Wharass && (!Orbwalking.CanAttack()) && Orbwalking.CanMove(80))
                 {
                     castW();
                 }
@@ -484,8 +484,6 @@ namespace Fiora
 
         public static Vector3 passivepos (Obj_AI_Base target)
         {
-            if (HasPassive(target))
-            {
                 var passive = FioraPassiveObjects.Where(x => x.Position.Distance(target.Position) <= 50).FirstOrDefault();
                 var Position = Prediction.GetPrediction(target, 0.25f).UnitPosition;
                 if (passive != null)
@@ -521,13 +519,10 @@ namespace Fiora
                     return new Vector3();
                 }
                 return new Vector3();
-            }
-            return new Vector3();
+            
         }
         public static List<Vector3> PassiveRadiusPoint (Obj_AI_Base target)
         {
-            if(HasPassive(target))
-            {
                 var passive = FioraPassiveObjects.Where(x => x.Position.Distance(target.Position) <= 50).FirstOrDefault();
                 var Position = Prediction.GetPrediction(target, 0.25f).UnitPosition;
                 if (passive != null)
@@ -578,11 +573,7 @@ namespace Fiora
                 {
                     return new List<Vector3>();
                 }
-            }
-            else
-            {
-                return new List<Vector3>();
-            }
+            
         }
         public static bool InTheCone (this Vector3 pos, List<Vector3> poses, Obj_AI_Base target)
         {
@@ -596,15 +587,13 @@ namespace Fiora
         }
         private static bool HasUltiPassive (Obj_AI_Base target)
         {
-            return ObjectManager.Get<GameObject>()
+            return ObjectManager.Get<Obj_GeneralParticleEmitter>()
                 .Where(x => x.Name.Contains("Fiora_Base_R_Mark") || (x.Name.Contains("Fiora_Base_R")&& x.Name.Contains("Timeout_FioraOnly.troy"))).Any(x => x.Position.Distance(target.Position) <= 50);
         }
         private static List<Vector3> UltiPassivePos (Obj_AI_Base target)
         {
             List<Vector3> poses = new List<Vector3>();
-            if (HasUltiPassive(target))
-            {
-                var passive = ObjectManager.Get<GameObject>()
+                var passive = ObjectManager.Get<Obj_GeneralParticleEmitter>()
                     .Where(x => x.Name.Contains("Fiora_Base_R_Mark") || (x.Name.Contains("Fiora_Base_R") && x.Name.Contains("Timeout_FioraOnly.troy")));
                 var Position = Prediction.GetPrediction(target, 0.25f).UnitPosition;
                 foreach (var x in passive)
@@ -638,7 +627,7 @@ namespace Fiora
                         poses.Add(pos.To3D());
                     }
                 }
-            }
+            
             return poses;
         }
         private static void checkobject()
@@ -660,11 +649,11 @@ namespace Fiora
             }
             Game.PrintChat(temp);
         }
-        private static List<GameObject> FioraPassiveObjects
+        private static List<Obj_GeneralParticleEmitter> FioraPassiveObjects
         {
             get
             {
-                var x = ObjectManager.Get<GameObject>().Where(a => FioraPassiveName.Contains(a.Name)).ToList();
+                var x = ObjectManager.Get<Obj_GeneralParticleEmitter>().Where(a => FioraPassiveName.Contains(a.Name)).ToList();
                 return x;
             }
         }
