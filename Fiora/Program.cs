@@ -337,29 +337,30 @@ namespace Fiora
         }
         public static void castQhelper(Obj_AI_Base target)
         {
+            var targetpos = Prediction.GetPrediction(target, 0.25f).UnitPosition;
             if (HasPassive(target))
             {
                 var poses = PassiveRadiusPoint(target);
-                var pos = target.Position.To2D().Extend(passivepos(target).To2D(),150);
+                var pos = passivepos(target).To2D();
                  var possibleposes = new List<Vector2>();
-                for (int i = 0; i <= 400; i = i + 20)
+                for (int i = 0; i <= 400; i = i + 100)
                 {
                     var p = Player.Position.To2D().Extend(pos, i);
                     possibleposes.Add(p);
                 }
-                var castpos = possibleposes.Where(x => x.To3D().InTheCone(poses, target) && x.Distance(Prediction.GetPrediction(target,0.25f).UnitPosition.To2D()) <= 300)
+                var castpos = possibleposes.Where(x => x.To3D().InTheCone(poses, targetpos.To2D()) && x.Distance(targetpos.To2D()) <= 300)
                                             .OrderByDescending(x => 1 - x.Distance(target.Position.To2D()))
                                             .FirstOrDefault();
-                if (castpos != null && castpos.IsValid() && castpos.Distance(target.Position.To2D()) <= 300)
+                if (castpos != null && castpos.IsValid() && castpos.Distance(targetpos.To2D()) <= 300)
                 {
                     Q.Cast(castpos);
                 }
                 else 
                 {
-                    var pos1 = Player.Position.Extend(Prediction.GetPrediction(target, 0.25f).UnitPosition, 400);
-                    if (Player.Distance(Prediction.GetPrediction(target, 0.25f).UnitPosition) < 400)
-                        pos1 = Prediction.GetPrediction(target, 0.25f).UnitPosition;
-                    if (pos1.Distance(Prediction.GetPrediction(target, 0.25f).UnitPosition) <= 300)
+                    var pos1 = Player.Position.Extend(targetpos, 400);
+                    if (Player.Distance(targetpos) < 400)
+                        pos1 = targetpos;
+                    if (pos1.Distance(targetpos) <= 300)
                     {
                         Q.Cast(pos1);
                     }
@@ -368,17 +369,17 @@ namespace Fiora
             else if (HasUltiPassive(target))
             {
                 var poses = UltiPassivePos(target);
-                var castpos = poses.OrderByDescending(x => 1 - x.Distance(target.Position)).FirstOrDefault();
+                var castpos = poses.OrderByDescending(x => 1 - x.Distance(targetpos)).FirstOrDefault();
                 if (castpos != null)
                 {
                     Q.Cast(castpos);
                 }
                 else
                 {
-                    var pos1 = Player.Position.Extend(Prediction.GetPrediction(target, 0.25f).UnitPosition, 400);
-                    if (Player.Distance(Prediction.GetPrediction(target, 0.25f).UnitPosition) < 400)
-                        pos1 = Prediction.GetPrediction(target, 0.25f).UnitPosition;
-                    if (pos1.Distance(Prediction.GetPrediction(target, 0.25f).UnitPosition) <= 300)
+                    var pos1 = Player.Position.Extend(targetpos, 400);
+                    if (Player.Distance(targetpos) < 400)
+                        pos1 = targetpos;
+                    if (pos1.Distance(targetpos) <= 300)
                     {
                         Q.Cast(pos1);
                     }
@@ -386,10 +387,10 @@ namespace Fiora
             }
             else
             {
-                var pos1 = Player.Position.Extend(Prediction.GetPrediction(target, 0.25f).UnitPosition, 400);
-                if (Player.Distance(Prediction.GetPrediction(target, 0.25f).UnitPosition) < 400)
-                    pos1 = Prediction.GetPrediction(target, 0.25f).UnitPosition;
-                if (pos1.Distance(Prediction.GetPrediction(target, 0.25f).UnitPosition) <= 300)
+                var pos1 = Player.Position.Extend(targetpos, 400);
+                if (Player.Distance(targetpos) < 400)
+                    pos1 = targetpos;
+                if (pos1.Distance(targetpos) <= 300)
                 {
                     Q.Cast(pos1);
                 }
@@ -397,29 +398,30 @@ namespace Fiora
         }
         public static Vector3 castQPos(Obj_AI_Base target)
         {
+            var targetpos = Prediction.GetPrediction(target, 0.25f).UnitPosition;
             if (HasPassive(target))
             {
                 var poses = PassiveRadiusPoint(target);
                 var pos = target.Position.To2D().Extend(passivepos(target).To2D(), 100);
                 var possibleposes = new List<Vector2>();
-                for (int i = 0; i <= 400; i = i + 20)
+                for (int i = 0; i <= 400; i = i + 100)
                 {
                     var p = Player.Position.To2D().Extend(pos, i);
                     possibleposes.Add(p);
                 }
-                var castpos = possibleposes.Where(x => x.To3D().InTheCone(poses, target) && x.Distance(Prediction.GetPrediction(target, 0.25f).UnitPosition.To2D()) <= 300)
+                var castpos = possibleposes.Where(x => x.To3D().InTheCone(poses, targetpos.To2D()) && x.Distance(targetpos.To2D()) <= 300)
                                             .OrderByDescending(x => 1 - x.Distance(target.Position.To2D()))
                                             .FirstOrDefault();
-                if (castpos != null && castpos.IsValid() && castpos.Distance(target.Position.To2D()) <= 300)
+                if (castpos != null && castpos.IsValid() && castpos.Distance(targetpos.To2D()) <= 300)
                 {
                     return (castpos.To3D());
                 }
                 else
                 {
-                    var pos1 = Player.Position.Extend(target.Position, 400);
-                    if (Player.Distance(target.Position) < 400)
-                        pos1 = target.Position;
-                    if (pos1.Distance(target.Position) <= 300)
+                    var pos1 = Player.Position.Extend(targetpos, 400);
+                    if (Player.Distance(targetpos) < 400)
+                        pos1 = targetpos;
+                    if (pos1.Distance(targetpos) <= 300)
                     {
                        return (pos1);
                     }
@@ -429,17 +431,17 @@ namespace Fiora
             else if (HasUltiPassive(target))
             {
                 var poses = UltiPassivePos(target);
-                var castpos = poses.OrderByDescending(x => 1 - x.Distance(target.Position)).FirstOrDefault();
+                var castpos = poses.OrderByDescending(x => 1 - x.Distance(targetpos)).FirstOrDefault();
                 if (castpos != null)
                 {
                     return (castpos);
                 }
                 else
                 {
-                    var pos1 = Player.Position.Extend(target.Position, 400);
-                    if (Player.Distance(target.Position) < 400)
-                        pos1 = target.Position;
-                    if (pos1.Distance(target.Position) <= 300)
+                    var pos1 = Player.Position.Extend(targetpos, 400);
+                    if (Player.Distance(targetpos) < 400)
+                        pos1 = targetpos;
+                    if (pos1.Distance(targetpos) <= 300)
                     {
                         return (pos1);
                     }
@@ -448,10 +450,10 @@ namespace Fiora
             }
             else
             {
-                var pos1 = Player.Position.Extend(target.Position, 400);
-                if (Player.Distance(target.Position) < 400)
-                    pos1 = target.Position;
-                if (pos1.Distance(target.Position) <= 300)
+                var pos1 = Player.Position.Extend(targetpos, 400);
+                if (Player.Distance(targetpos) < 400)
+                    pos1 = targetpos;
+                if (pos1.Distance(targetpos) <= 300)
                 {
                     return (pos1);
                 }
@@ -575,12 +577,12 @@ namespace Fiora
                 }
             
         }
-        public static bool InTheCone (this Vector3 pos, List<Vector3> poses, Obj_AI_Base target)
+        public static bool InTheCone (this Vector3 pos, List<Vector3> poses, Vector2 targetpos)
         {
             bool x = true;
             foreach (var i in poses)
             {
-                if (AngleBetween(pos.To2D(),Prediction.GetPrediction(target,0.25f).UnitPosition.To2D(),i.To2D()) >90)
+                if (AngleBetween(pos.To2D(),targetpos,i.To2D()) >90)
                     x = false;
             }
             return x;
